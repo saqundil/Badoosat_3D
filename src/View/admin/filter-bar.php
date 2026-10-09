@@ -13,16 +13,18 @@ declare(strict_types=1);
  * @var list<array{type:'date'|'search',name:string,label:string,value:string,placeholder?:string}> $fields
  * @var array<string,string> $keep
  * @var string $clearHref
+ * @var ?string $label      the form's accessible name (default: "Filter orders")
  */
 
 use App\Support\Format;
 use App\Support\Lang;
 
 $keep ??= [];
+$label ??= Lang::get('admin.filters.label');
 $active = count(array_filter($fields, static fn (array $f): bool => $f['value'] !== ''));
 ?>
 <form class="filter-bar" method="get" action="<?= e($action) ?>" role="search"
-      aria-label="<?= e(Lang::get('admin.filters.label')) ?>">
+      aria-label="<?= e($label) ?>">
     <p class="filter-bar__title">
         <?= e(Lang::get('admin.filters.active')) ?>
         <span class="count-badge<?= $active > 0 ? ' count-badge--on' : '' ?>"><?= e(Format::number($active)) ?></span>

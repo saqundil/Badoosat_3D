@@ -1440,6 +1440,26 @@ textarea:focus-visible {
     gap: var(--space-1);
 }
 
+/* A feature a row has, named: a quiet pill, not a status. */
+.tag-row {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 24px;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
 .swatch-row__more {
     color: var(--c-ink-2);
     font-size: var(--fs-caption);

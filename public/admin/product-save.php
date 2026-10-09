@@ -8,6 +8,7 @@ use App\Service\ProductManagementService;
 use App\Service\ValidationException;
 use App\Support\Auth;
 use App\Support\Csrf;
+use App\Support\Lang;
 use App\Support\Response;
 use App\Support\UploadLimit;
 
@@ -54,7 +55,7 @@ if ($action === 'delete') {
     }
 
     Csrf::session();
-    $_SESSION['notice'] = 'حُذف المنتج.';
+    $_SESSION['notice'] = Lang::get('admin.products.deleted');
     Response::redirect('/admin/products.php');
 }
 

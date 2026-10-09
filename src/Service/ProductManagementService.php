@@ -56,9 +56,40 @@ final class ProductManagementService
     }
 
     /** @return array{items:array<int,array<string,mixed>>,total:int,page:int,pages:int} */
-    public function paginate(string $search, int $page, int $perPage = 20): array
+    public function paginate(string $search, int $page, int $perPage = 20, string $sort = 'updated', string $dir = 'desc'): array
     {
-        return $this->products->paginate(mb_substr(trim($search), 0, 80), $page, $perPage);
+        return $this->products->paginate(mb_substr(trim($search), 0, 80), $page, $perPage, $sort, $dir);
+    }
+
+    /**
+     * What the admin list shows beside each product, for a whole page in two
+     * queries: the colours it is on sale in, the stock and number of its
+     * active variants, and a thumbnail (its main image, else its first one).
+     *
+     * @param array<int,int> $productIds
+     * @return array<int,array{colors:array<int,array{name:string,hex:string}>,stock:int,variants:int,thumb:?string}>
+     */
+    public function listFacts(array $productIds): array
+    {
+        $facts = [];
+
+        foreach ($productIds as $id) {
+            $facts[(int) $id] = ['colors' => [], 'stock' => 0, 'variants' => 0, 'thumb' => null];
+        }
+
+        foreach ($this->products->variantsFor($productIds) as $v) {
+            $f = &$facts[(int) $v['product_id']];
+            $f['colors'][(int) $v['color_id']] = ['name' => (string) $v['color_name'], 'hex' => (string) $v['color_hex']];
+            $f['stock'] += (int) $v['stock'];
+            $f['variants']++;
+            unset($f);
+        }
+
+        foreach ($this->products->imagesFor($productIds) as $image) {
+            $facts[(int) $image['product_id']]['thumb'] ??= (string) $image['path'];
+        }
+
+        return $facts;
     }
 
     public function find(int $id): ?array

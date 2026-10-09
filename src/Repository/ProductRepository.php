@@ -18,7 +18,17 @@ final class ProductRepository extends Repository
     public const SORTS = ['newest', 'bestselling', 'price_asc', 'price_desc'];
 
     /** @return array{items:array<int,array<string,mixed>>,total:int,page:int,pages:int} */
-    public function paginate(string $search, int $page, int $perPage = 20): array
+    /**
+     * Sort keys the admin list may ask for, and the columns they mean. Anything
+     * else falls back to the most recently changed first.
+     */
+    private const ADMIN_SORTS = [
+        'name'    => 'name',
+        'price'   => 'base_price_cents',
+        'updated' => 'updated_at',
+    ];
+
+    public function paginate(string $search, int $page, int $perPage = 20, string $sort = 'updated', string $dir = 'desc'): array
     {
         $page = max(1, $page);
         $perPage = max(1, min(100, $perPage));
@@ -40,7 +50,8 @@ final class ProductRepository extends Repository
 
         $stmt = $this->pdo()->prepare(
             'SELECT * FROM products' . $where
-            . ' ORDER BY updated_at DESC, id DESC LIMIT ' . $perPage . ' OFFSET ' . $offset
+            . ' ORDER BY ' . (self::ADMIN_SORTS[$sort] ?? 'updated_at') . ' ' . ($dir === 'asc' ? 'ASC' : 'DESC')
+            . ', id DESC LIMIT ' . $perPage . ' OFFSET ' . $offset
         );
         $stmt->execute($params);
 
