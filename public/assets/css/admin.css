@@ -3709,3 +3709,250 @@ a.pager__page:hover {
         border-radius: var(--r-panel);
     }
 }
+
+/* ------------------------------------------------------ studio shell */
+
+/* Template D. Pane widths are stated once; folding a pane sets it to zero. */
+.studio {
+    --studio-layers: 260px;
+    --studio-panel: 320px;
+    --studio-top: calc(var(--admin-bar-h) + var(--space-4));
+
+    display: grid;
+    grid-template-columns: var(--studio-layers) minmax(0, 1fr) var(--studio-panel);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        'layers toolbar panel'
+        'layers stage panel';
+    gap: var(--space-3);
+    align-items: start;
+}
+
+.studio--no-layers {
+    --studio-layers: 0px;
+}
+
+.studio--no-panel {
+    --studio-panel: 0px;
+}
+
+.studio--no-layers .studio__pane--layers,
+.studio--no-panel .studio__pane--panel {
+    display: none;
+}
+
+.studio__toolbar {
+    grid-area: toolbar;
+    justify-self: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    max-inline-size: 100%;
+    padding: var(--space-2);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-md);
+}
+
+.studio__group {
+    display: inline-flex;
+    gap: var(--space-1);
+}
+
+.studio__spacer {
+    flex: 1;
+}
+
+.studio__pane {
+    position: sticky;
+    inset-block-start: var(--studio-top);
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    max-block-size: calc(100vh - var(--studio-top) - var(--space-4));
+    overflow: auto;
+    padding: var(--space-4);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.studio__pane--layers {
+    grid-area: layers;
+}
+
+.studio__pane--panel {
+    grid-area: panel;
+}
+
+.studio__pane-title {
+    font-size: var(--fs-small);
+    font-weight: var(--weight-semibold);
+    color: var(--c-ink-2);
+}
+
+.studio__tabs {
+    display: flex;
+}
+
+.studio__tabs .segmented__option {
+    flex: 1;
+}
+
+.studio__tabpanel {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.studio__tabpanel[hidden] {
+    display: none;
+}
+
+/* The preview: a sunken stage with the page inside it at its true width,
+   zoomed to fit. zoom keeps the layout box in step with what is drawn; where
+   it is unsupported the stage scrolls instead. */
+.studio__stage {
+    grid-area: stage;
+    display: grid;
+    justify-items: center;
+    min-inline-size: 0;
+    min-block-size: 480px;
+    overflow: auto;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface-2);
+}
+
+.studio__frame {
+    inline-size: var(--frame-w, 100%);
+    max-inline-size: none;
+    zoom: var(--frame-scale, 1);
+    border-radius: var(--r-tile);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.studio__frame iframe {
+    display: block;
+    inline-size: 100%;
+    min-block-size: 640px;
+    border: 0;
+}
+
+/* Rows in the sections list: one per thing on the canvas. */
+.studio__layers {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.layer-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: var(--tap);
+    padding-inline: var(--space-3);
+    border: 0;
+    border-radius: var(--r-tile);
+    background: transparent;
+    color: var(--c-ink);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.layer-row:hover {
+    background: var(--c-surface-2);
+}
+
+.layer-row.is-selected {
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+    font-weight: var(--weight-semibold);
+}
+
+.layer-row__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 28px;
+    block-size: 28px;
+    border-radius: 8px;
+    background: var(--c-surface-2);
+    color: var(--c-ink-2);
+}
+
+.layer-row.is-selected .layer-row__icon {
+    background: var(--c-surface);
+    color: var(--c-accent);
+}
+
+.layer-row__icon .icon {
+    inline-size: 16px;
+    block-size: 16px;
+}
+
+/* Something on the canvas that matches a row; outlined while selected. */
+[data-studio-frame] [data-studio-item] {
+    cursor: pointer;
+    outline: 1px dashed transparent;
+    outline-offset: 4px;
+    transition: outline-color var(--dur-fast) var(--ease);
+}
+
+[data-studio-frame] [data-studio-item]:hover {
+    outline-color: var(--c-ink-2);
+}
+
+[data-studio-frame] [data-studio-item].is-selected {
+    outline: 2px solid var(--c-accent);
+}
+
+@media (max-width: 1279px) {
+    .studio {
+        --studio-layers: 220px;
+        --studio-panel: 280px;
+    }
+}
+
+/* Below a laptop the panes stack: tools, then the preview, then the
+   properties, then the list. */
+@media (max-width: 1023px) {
+    .studio,
+    .studio--no-layers,
+    .studio--no-panel {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            'toolbar'
+            'stage'
+            'panel'
+            'layers';
+    }
+
+    .studio__pane {
+        position: static;
+        max-block-size: none;
+    }
+
+    .studio__toolbar {
+        justify-self: stretch;
+        border-radius: var(--r-tile);
+    }
+
+    /* Nothing folds on a narrow screen: a pane folded on a wide one comes back. */
+    .studio__toggle {
+        display: none;
+    }
+
+    .studio--no-layers .studio__pane--layers,
+    .studio--no-panel .studio__pane--panel {
+        display: grid;
+    }
+
+    .studio__stage {
+        min-block-size: 320px;
+    }
+}

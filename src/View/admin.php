@@ -83,5 +83,6 @@ $toast     = $toast ?? null;
 <script type="module" src="/assets/js/admin-ui.js?v=<?= e(ASSETS) ?>"></script>
 <script type="module" src="/assets/js/admin-forms.js?v=<?= e(ASSETS) ?>"></script>
 <script type="module" src="/assets/js/admin-table.js?v=<?= e(ASSETS) ?>"></script>
+<script type="module" src="/assets/js/admin-studio.js?v=<?= e(ASSETS) ?>"></script>
 </body>
 </html>
