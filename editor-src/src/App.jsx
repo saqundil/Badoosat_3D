@@ -56,6 +56,16 @@ export default function App({ onClose }) {
     const step = useEditor((s) => s.step);
     const sync = useEditor((s) => s.sync);
 
+    /*
+     * Subscribed, not read once per render. Both depend on things this component
+     * does not otherwise watch -- the objects on the canvas, the colour, size and
+     * quantity -- so reading them with getState() left the review button disabled
+     * after "add text" and the price at one piece after "+". A selector re-runs on
+     * every store change and re-renders only when the message or the sum differs.
+     */
+    const blocked = useEditor((s) => s.blocked());
+    const price = useEditor((s) => s.priceCents());
+
     const canvasRef = useRef(null);
     const fileRef = useRef(null);
     const narrow = useIsNarrow();
@@ -157,8 +167,6 @@ export default function App({ onClose }) {
         return null;
     }
 
-    const blocked = useEditor.getState().blocked();
-    const price = useEditor.getState().priceCents();
 
     const designPanel = (
         <>
