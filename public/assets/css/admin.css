@@ -3638,7 +3638,8 @@ body:has(.save-bar:not([hidden])) .toasts {
     white-space: nowrap;
 }
 
-.data-table__th--end,
+/* Scoped to the table so it outranks the thead rule above. */
+.data-table__table .data-table__th--end,
 .data-table__cell--end {
     text-align: end;
 }
