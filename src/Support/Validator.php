@@ -53,7 +53,7 @@ final class Validator
     public function required(string $field, string $label): self
     {
         if ($this->string($field) === '') {
-            $this->fail($field, $label . ' مطلوب.');
+            $this->fail($field, self::say('required', $label));
         }
 
         return $this;
@@ -62,7 +62,7 @@ final class Validator
     public function maxLength(string $field, int $max, string $label): self
     {
         if (mb_strlen($this->string($field)) > $max) {
-            $this->fail($field, $label . ' يجب ألا يتجاوز ' . $max . ' حرفًا.');
+            $this->fail($field, self::say('max_length', $label, ['max' => $max]));
         }
 
         return $this;
@@ -71,7 +71,7 @@ final class Validator
     public function hex(string $field, string $label): self
     {
         if (!preg_match(self::HEX, $this->string($field))) {
-            $this->fail($field, $label . ' يجب أن يكون بصيغة ‎#RRGGBB.');
+            $this->fail($field, self::say('hex', $label));
         }
 
         return $this;
@@ -81,7 +81,7 @@ final class Validator
     public function in(string $field, array $allowed, string $label): self
     {
         if (!in_array($this->value($field), $allowed, true)) {
-            $this->fail($field, $label . ' قيمة غير معروفة.');
+            $this->fail($field, self::say('in', $label));
         }
 
         return $this;
@@ -92,7 +92,7 @@ final class Validator
         $value = $this->value($field);
 
         if (!is_numeric($value) || (int) $value < $min || (int) $value > $max) {
-            $this->fail($field, $label . ' يجب أن يكون رقمًا بين ' . $min . ' و ' . $max . '.');
+            $this->fail($field, self::say('integer', $label, ['min' => $min, 'max' => $max]));
         }
 
         return $this;
@@ -103,7 +103,7 @@ final class Validator
         $value = $this->value($field);
 
         if (!is_numeric($value) || (float) $value < $min || (float) $value > $max) {
-            $this->fail($field, $label . ' يجب أن يكون بين ' . $min . ' و ' . $max . '.');
+            $this->fail($field, self::say('between', $label, ['min' => $min, 'max' => $max]));
         }
 
         return $this;
@@ -115,14 +115,14 @@ final class Validator
 
         if ($value === '') {
             if (!$optional) {
-                $this->fail($field, $label . ' مطلوب.');
+                $this->fail($field, self::say('required', $label));
             }
 
             return $this;
         }
 
         if (!self::isAssetPath($value, $extension)) {
-            $this->fail($field, $label . ' مسار غير مسموح.');
+            $this->fail($field, self::say('asset_path', $label));
         }
 
         return $this;
@@ -134,14 +134,14 @@ final class Validator
 
         if ($value === '') {
             if (!$optional) {
-                $this->fail($field, $label . ' مطلوب.');
+                $this->fail($field, self::say('required', $label));
             }
 
             return $this;
         }
 
         if (!self::isLink($value)) {
-            $this->fail($field, $label . ' يجب أن يكون رابطًا كاملًا أو مسارًا داخليًا يبدأ بـ ‎/.');
+            $this->fail($field, self::say('link', $label));
         }
 
         return $this;
@@ -159,22 +159,22 @@ final class Validator
             try {
                 $list = json_decode($raw, true, 8, JSON_THROW_ON_ERROR);
             } catch (\JsonException) {
-                return $this->fail($field, $label . ' ليست JSON صالحة.');
+                return $this->fail($field, self::say('json', $label));
             }
         } else {
             $list = $raw;
         }
 
         if (!is_array($list) || !array_is_list($list)) {
-            return $this->fail($field, $label . ' يجب أن تكون مصفوفة.');
+            return $this->fail($field, self::say('list', $label));
         }
 
         if ($list === []) {
-            return $this->fail($field, $label . ' لا يمكن أن تكون فارغة.');
+            return $this->fail($field, self::say('list_empty', $label));
         }
 
         if (count($list) > $max) {
-            return $this->fail($field, $label . ' لا تقبل أكثر من ' . $max . ' عنصرًا.');
+            return $this->fail($field, self::say('list_max', $label, ['max' => $max]));
         }
 
         foreach ($list as $i => $item) {
@@ -186,6 +186,18 @@ final class Validator
         }
 
         return $this;
+    }
+
+    /**
+     * One message from the lang files' validation.* keys, with the field's
+     * label and any limits put in. Limits stay as written (Western digits), the
+     * way every message read before it was translated.
+     *
+     * @param array<string,int|float> $limits
+     */
+    private static function say(string $rule, string $label, array $limits = []): string
+    {
+        return Lang::get('validation.' . $rule, ['label' => $label] + $limits);
     }
 
     public static function isHex(mixed $value): bool

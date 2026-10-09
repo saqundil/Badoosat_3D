@@ -323,4 +323,18 @@ return [
     'admin.patterns.saved_demo'        => 'Saved. In the gallery nothing is stored.',
     'admin.patterns.deleted_demo'      => 'Done. In the gallery nothing is deleted.',
     'admin.patterns.not_saved'         => 'Not saved: fix the marked fields.',
+
+    // Validation messages (src/Support/Validator.php). :label is the field's own label.
+    'validation.required'     => ':label is required.',
+    'validation.max_length'   => ':label must be :max characters or fewer.',
+    'validation.hex'          => ':label must be a colour in #RRGGBB form.',
+    'validation.in'           => ':label has a value that is not on the list.',
+    'validation.integer'      => ':label must be a whole number from :min to :max.',
+    'validation.between'      => ':label must be between :min and :max.',
+    'validation.asset_path'   => ':label is not an allowed path.',
+    'validation.link'         => ':label must be a full link or a site path starting with /.',
+    'validation.json'         => ':label is not valid JSON.',
+    'validation.list'         => ':label must be a list.',
+    'validation.list_empty'   => ':label cannot be empty.',
+    'validation.list_max'     => ':label takes at most :max items.',
 ];

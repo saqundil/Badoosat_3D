@@ -537,4 +537,18 @@ return [
     'admin.patterns.saved_demo'        => 'حُفظ. في معرض الأنماط لا يُخزَّن شيء.',
     'admin.patterns.deleted_demo'      => 'تم. في معرض الأنماط لا يُحذف شيء.',
     'admin.patterns.not_saved'         => 'لم يُحفظ: أصلح الحقول المعلَّمة.',
+
+    // Validation messages (src/Support/Validator.php). :label is the field's own label.
+    'validation.required'     => ':label مطلوب.',
+    'validation.max_length'   => ':label يجب ألا يتجاوز :max حرفًا.',
+    'validation.hex'          => ':label يجب أن يكون بصيغة ‎#RRGGBB.',
+    'validation.in'           => ':label قيمة غير معروفة.',
+    'validation.integer'      => ':label يجب أن يكون رقمًا بين :min و :max.',
+    'validation.between'      => ':label يجب أن يكون بين :min و :max.',
+    'validation.asset_path'   => ':label مسار غير مسموح.',
+    'validation.link'         => ':label يجب أن يكون رابطًا كاملًا أو مسارًا داخليًا يبدأ بـ ‎/.',
+    'validation.json'         => ':label ليست JSON صالحة.',
+    'validation.list'         => ':label يجب أن تكون مصفوفة.',
+    'validation.list_empty'   => ':label لا يمكن أن تكون فارغة.',
+    'validation.list_max'     => ':label لا تقبل أكثر من :max عنصرًا.',
 ];
