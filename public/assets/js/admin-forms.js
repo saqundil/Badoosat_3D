@@ -1,0 +1,353 @@
+/*
+ * The dashboard's form system: what plain HTML forms cannot do on their own.
+ * Every form posts and validates without this file; it only adds feedback.
+ *
+ *   form[data-watch]            tracks unsaved changes: shows its
+ *                               [data-save-bar="<form id>"], warns before leaving,
+ *                               and [data-discard] puts every control back.
+ *   [data-count-for]            live character counter for a field with maxlength.
+ *   [data-error-summary]        takes focus on load; its links focus the control.
+ *   [data-dialog-open="<id>"]   opens <dialog id> instead of submitting; the
+ *                               dialog's own button submits (see form/dialog.php).
+ *   [data-toasts]               toast region; window.adminToast(text, kind) adds one.
+ *   [data-dropzone]             preview, drag-and-drop, paste, size warnings.
+ *   [data-stock-matrix]         keeps row, column and grand totals current.
+ *   [data-settings-index]       marks the section in view in the index.
+ *
+ * No user-facing string lives here: every sentence arrives in a data-* attribute
+ * written by PHP from the lang files.
+ */
+
+const lang = document.documentElement.lang || 'ar';
+const numbers = new Intl.NumberFormat(lang + '-u-nu-latn');
+
+/* ------------------------------------------------------------ unsaved changes */
+
+const snapshot = (form) => {
+    const parts = [];
+
+    for (const el of form.elements) {
+        if (!el.name || el.disabled || el.type === 'submit' || el.type === 'button') {
+            continue;
+        }
+        if (el.type === 'checkbox' || el.type === 'radio') {
+            parts.push(el.name + '=' + (el.checked ? el.value : ''));
+        } else if (el.type === 'file') {
+            parts.push(el.name + '=' + [...el.files].map((f) => f.name + f.size).join('|'));
+        } else {
+            parts.push(el.name + '=' + el.value);
+        }
+    }
+
+    return parts.join('&');
+};
+
+const watched = new Map();
+
+const refresh = (form) => {
+    const dirty = snapshot(form) !== watched.get(form);
+    const bar = document.querySelector('[data-save-bar="' + form.id + '"]');
+
+    form.toggleAttribute('data-dirty', dirty);
+    if (bar) {
+        bar.hidden = !dirty;
+    }
+};
+
+for (const form of document.querySelectorAll('form[data-watch]')) {
+    watched.set(form, snapshot(form));
+    form.addEventListener('input', () => refresh(form));
+    form.addEventListener('change', () => refresh(form));
+    form.addEventListener('submit', () => {
+        // A form on its way to the server has nothing left to lose.
+        watched.set(form, snapshot(form));
+        form.removeAttribute('data-dirty');
+    });
+}
+
+document.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('[data-discard]') : null;
+    const form = button && document.getElementById(button.dataset.discard);
+
+    if (!(form instanceof HTMLFormElement)) {
+        return;
+    }
+
+    form.reset();
+    // reset() fires no input events; the counters, previews and totals listen for them.
+    for (const el of form.elements) {
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    for (const zone of form.querySelectorAll('[data-dropzone]')) {
+        resetDropzone(zone);
+    }
+    refresh(form);
+});
+
+window.addEventListener('beforeunload', (event) => {
+    for (const form of watched.keys()) {
+        if (form.hasAttribute('data-dirty')) {
+            event.preventDefault();
+            return;
+        }
+    }
+});
+
+/* ------------------------------------------------------------------ counters */
+
+const counters = document.querySelectorAll('[data-count-for]');
+
+for (const counter of counters) {
+    const field = document.getElementById(counter.dataset.countFor);
+    const out = counter.querySelector('[data-count]');
+
+    if (field && out) {
+        const update = () => {
+            out.textContent = numbers.format(field.value.length);
+        };
+        field.addEventListener('input', update);
+        update();
+    }
+}
+
+/* ------------------------------------------------------------- error summary */
+
+const summary = document.querySelector('[data-error-summary]');
+
+if (summary) {
+    summary.focus();
+    summary.addEventListener('click', (event) => {
+        const link = event.target instanceof Element ? event.target.closest('a[href^="#"]') : null;
+        const target = link && document.getElementById(link.getAttribute('href').slice(1));
+
+        if (target) {
+            event.preventDefault();
+            target.closest('details')?.setAttribute('open', '');
+            target.scrollIntoView({ block: 'center' });
+            target.focus({ preventScroll: true });
+        }
+    });
+}
+
+/* ------------------------------------------------------------------- dialogs */
+
+document.addEventListener('click', (event) => {
+    const el = event.target instanceof Element ? event.target : null;
+    const opener = el?.closest('[data-dialog-open]');
+
+    if (opener) {
+        const dialog = document.getElementById(opener.dataset.dialogOpen);
+
+        if (dialog instanceof HTMLDialogElement) {
+            // The opener is a submit button so the action still works without
+            // script; with script, the dialog stands in between.
+            event.preventDefault();
+            dialog.showModal();
+        }
+        return;
+    }
+
+    if (el?.closest('[data-dialog-close]')) {
+        el.closest('dialog')?.close();
+        return;
+    }
+
+    // A click on the backdrop lands on the <dialog> itself.
+    if (el instanceof HTMLDialogElement && el.open) {
+        const box = el.getBoundingClientRect();
+        if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) {
+            el.close();
+        }
+    }
+});
+
+/* -------------------------------------------------------------------- toasts */
+
+const region = document.querySelector('[data-toasts]');
+const MAX_TOASTS = 3;
+
+const dismiss = (toast) => {
+    toast.classList.add('toast--leaving');
+    setTimeout(() => toast.remove(), 200);
+};
+
+const arm = (toast) => {
+    toast.querySelector('[data-toast-close]')?.addEventListener('click', () => dismiss(toast));
+    // Errors stay until they are closed: they are the ones that need reading.
+    if (!toast.classList.contains('toast--error')) {
+        setTimeout(() => dismiss(toast), 5000);
+    }
+};
+
+if (region) {
+    region.querySelectorAll('.toast').forEach(arm);
+
+    window.adminToast = (text, kind = 'ok') => {
+        const toast = document.createElement('div');
+        const body = document.createElement('p');
+        const close = document.createElement('button');
+
+        toast.className = 'toast toast--' + kind;
+        if (kind === 'error') {
+            toast.setAttribute('role', 'alert');
+        }
+        body.className = 'toast__text';
+        body.textContent = text;
+        close.type = 'button';
+        close.className = 'toast__close';
+        close.setAttribute('data-toast-close', '');
+        close.setAttribute('aria-label', region.dataset.closeLabel || '');
+        close.innerHTML = region.dataset.closeIcon || '×';
+        toast.append(body, close);
+        region.append(toast);
+
+        const all = region.querySelectorAll('.toast:not(.toast--leaving)');
+        if (all.length > MAX_TOASTS) {
+            dismiss(all[0]);
+        }
+        arm(toast);
+    };
+}
+
+/* ------------------------------------------------------------------ dropzone */
+
+function resetDropzone(zone) {
+    const preview = zone.querySelector('[data-preview]');
+    const empty = zone.querySelector('[data-empty]');
+    const status = zone.querySelector('[data-status]');
+
+    if (preview.dataset.original) {
+        preview.src = preview.dataset.original;
+        preview.hidden = false;
+        empty.hidden = true;
+    } else {
+        preview.removeAttribute('src');
+        preview.hidden = true;
+        empty.hidden = false;
+    }
+    status.textContent = '';
+    zone.classList.remove('dropzone--warn', 'dropzone--removed');
+}
+
+const show = (zone, file) => {
+    const preview = zone.querySelector('[data-preview]');
+    const empty = zone.querySelector('[data-empty]');
+    const status = zone.querySelector('[data-status]');
+    const input = zone.querySelector('input[type="file"]');
+    const accept = input.accept.split(',').map((s) => s.trim());
+    const msgs = zone.dataset;
+
+    zone.classList.remove('dropzone--warn');
+
+    if (accept.length && !accept.includes(file.type)) {
+        status.textContent = msgs.msgType;
+        zone.classList.add('dropzone--warn');
+        return;
+    }
+    if (Number(msgs.maxBytes) && file.size > Number(msgs.maxBytes)) {
+        status.textContent = msgs.msgBig;
+        zone.classList.add('dropzone--warn');
+        return;
+    }
+
+    const url = URL.createObjectURL(file);
+    preview.onload = () => {
+        const small = preview.naturalWidth < Number(msgs.minWidth) || preview.naturalHeight < Number(msgs.minHeight);
+        status.textContent = small ? msgs.msgSmall : msgs.msgChosen.replace(':name', file.name);
+        zone.classList.toggle('dropzone--warn', small);
+    };
+    preview.src = url;
+    preview.hidden = false;
+    empty.hidden = true;
+};
+
+for (const zone of document.querySelectorAll('[data-dropzone]')) {
+    const input = zone.querySelector('input[type="file"]');
+    const preview = zone.querySelector('[data-preview]');
+    const remove = zone.querySelector('[data-drop-remove]');
+
+    if (preview.getAttribute('src')) {
+        preview.dataset.original = preview.getAttribute('src');
+    }
+
+    input.addEventListener('change', () => {
+        if (input.files[0]) {
+            show(zone, input.files[0]);
+        }
+    });
+
+    // Put dropped or pasted files into the real input, so the form posts them.
+    const take = (files) => {
+        if (!files || !files.length) {
+            return;
+        }
+        const list = new DataTransfer();
+        list.items.add(files[0]);
+        input.files = list.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    zone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        zone.classList.add('dropzone--over');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dropzone--over'));
+    zone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        zone.classList.remove('dropzone--over');
+        take(event.dataTransfer.files);
+    });
+    zone.addEventListener('paste', (event) => take(event.clipboardData?.files));
+
+    remove?.addEventListener('change', () => {
+        zone.classList.toggle('dropzone--removed', remove.checked);
+    });
+}
+
+/* -------------------------------------------------------------- stock matrix */
+
+for (const matrix of document.querySelectorAll('[data-stock-matrix]')) {
+    const sum = (selector) => [...matrix.querySelectorAll(selector)].reduce((n, el) => n + (Number(el.value) || 0), 0);
+
+    const totals = () => {
+        for (const cell of matrix.querySelectorAll('[data-row-total]')) {
+            cell.textContent = numbers.format(sum('input[data-row="' + cell.dataset.rowTotal + '"]'));
+        }
+        for (const cell of matrix.querySelectorAll('[data-col-total]')) {
+            cell.textContent = numbers.format(sum('input[data-col="' + cell.dataset.colTotal + '"]'));
+        }
+        matrix.querySelector('[data-grand-total]').textContent = numbers.format(sum('input[data-row]'));
+    };
+
+    matrix.addEventListener('input', totals);
+}
+
+/* ------------------------------------------------------------ settings index */
+
+const index = document.querySelector('[data-settings-index]');
+
+if (index && 'IntersectionObserver' in window) {
+    const links = new Map([...index.querySelectorAll('a[href^="#"]')].map((a) => [a.getAttribute('href').slice(1), a]));
+    const seen = new Map();
+
+    const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            seen.set(entry.target.id, entry.isIntersecting);
+        }
+        const current = [...links.keys()].find((id) => seen.get(id));
+        for (const [id, link] of links) {
+            if (id === current) {
+                link.setAttribute('aria-current', 'true');
+            } else {
+                link.removeAttribute('aria-current');
+            }
+        }
+    }, { rootMargin: '-20% 0px -60% 0px' });
+
+    for (const id of links.keys()) {
+        const section = document.getElementById(id);
+        if (section) {
+            observer.observe(section);
+        }
+    }
+}

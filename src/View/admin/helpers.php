@@ -12,12 +12,13 @@ declare(strict_types=1);
  *
  * A partial sees what it is given and nothing from the page around it, so a
  * $title or $order in the caller can never leak into a component by accident.
+ * One folder level is allowed, for families of partials: 'form/field'.
  *
  * @param array<string,mixed> $vars
  */
 function admin_partial(string $name, array $vars = []): void
 {
-    if (preg_match('/^[a-z][a-z0-9-]*$/', $name) !== 1) {
+    if (preg_match('~^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)?$~', $name) !== 1) {
         throw new InvalidArgumentException('Bad partial name: ' . $name);
     }
 
@@ -61,8 +62,18 @@ function admin_icon(string $name): string
         'eye'      => '<path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.5"/>',
         'inbox'    => '<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/>',
         'dot'      => '<circle cx="12" cy="12" r="3"/>',
+        'more'     => '<circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/>',
+        'undo'     => '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+        'redo'     => '<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',
+        'panel'    => '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M10 5v14"/>',
+        'menu'     => '<path d="M4 7h16M4 12h16M4 17h16"/>',
+        'grid'     => '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+        'shirt'    => '<path d="M9 4l-5 3 2 4 2-1v10h8V10l2 1 2-4-5-3a3 3 0 0 1-6 0z"/>',
+        'store'    => '<path d="M4 9l1.5-4h13L20 9"/><path d="M4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0A2.7 2.7 0 0 0 20 9"/><path d="M5.5 11.5V20h13v-8.5"/><path d="M10 20v-5h4v5"/>',
+        'gear'     => '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
     ];
-    static $directional = ['back', 'forward', 'external', 'logout', 'trend'];
+    // undo/redo point back and forward in time, which reads along the line.
+    static $directional = ['back', 'forward', 'external', 'logout', 'trend', 'undo', 'redo'];
 
     $class = 'icon' . (in_array($name, $directional, true) ? ' icon--dir' : '');
 

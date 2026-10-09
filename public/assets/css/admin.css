@@ -2289,3 +2289,1005 @@ legend {
         flex: 1;
     }
 }
+
+/* =================================================================
+ * PHASE 2 FOUNDATIONS
+ *
+ * The form system, the data table, the studio shell and the settings
+ * layout. Every value is a token from tokens.css or an alias above; every
+ * direction is logical. The partials these style live in
+ * src/View/admin/form/, data-table.php, studio.php and settings.php.
+ * ================================================================= */
+
+/* ------------------------------------------------- browser surfaces */
+
+body.admin {
+    accent-color: var(--c-accent);
+    caret-color: var(--c-accent);
+    scrollbar-color: var(--c-ink-2) transparent;
+}
+
+body.admin ::selection {
+    background: var(--c-accent-soft);
+    color: var(--c-ink);
+}
+
+/* ------------------------------------------------------ form layout */
+
+.form-stack {
+    display: grid;
+    gap: var(--space-5);
+}
+
+.form-grid {
+    display: grid;
+    gap: var(--space-5) var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.form-grid > .form-field--wide {
+    grid-column: 1 / -1;
+}
+
+/* ---------------------------------------------------------- a field */
+
+.form-field {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    min-inline-size: 0;
+}
+
+.form-field__group {
+    display: grid;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    border: 0;
+}
+
+.form-field__label {
+    font-weight: var(--weight-semibold);
+    color: var(--c-ink);
+}
+
+.form-field__req {
+    color: var(--c-danger);
+    margin-inline-start: var(--space-1);
+}
+
+.form-field__help,
+.form-field__count {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+}
+
+.form-field__count {
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+}
+
+.form-field__error {
+    display: flex;
+    align-items: start;
+    gap: var(--space-2);
+    color: var(--c-danger);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-semibold);
+}
+
+.form-field__error .icon {
+    inline-size: 16px;
+    block-size: 16px;
+    margin-block-start: 1px;
+}
+
+/* A browser-checked rule says nothing until the person has touched the field. */
+.form-field__error--client {
+    display: none;
+}
+
+.form-field:has(:user-invalid) .form-field__error--client {
+    display: flex;
+}
+
+/* ------------------------------------------------------- the inputs */
+
+.input {
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: var(--tap);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4);
+    background: var(--c-surface);
+    color: var(--c-ink);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-md);
+    font: inherit;
+    line-height: 1.4;
+    transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+.input:hover {
+    border-color: var(--c-ink-2);
+}
+
+.input:focus-visible {
+    border-color: var(--c-accent);
+    outline: var(--focus-ring);
+    outline-offset: 0;
+}
+
+.input:disabled {
+    background: var(--c-surface-2);
+    color: var(--c-ink-2);
+    cursor: not-allowed;
+}
+
+.input::placeholder {
+    color: var(--c-ink-2);
+}
+
+.input:user-invalid,
+.input[aria-invalid='true'] {
+    border-color: var(--c-danger);
+}
+
+/* Grows with what is typed where the browser can; a fixed height elsewhere. */
+.input--area {
+    field-sizing: content;
+    min-block-size: calc(var(--tap) * 2);
+    max-block-size: 24lh;
+    resize: block;
+}
+
+.select {
+    position: relative;
+    display: block;
+}
+
+.select::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-end: var(--space-4);
+    inline-size: 8px;
+    block-size: 8px;
+    border-block-end: 2px solid var(--c-ink-2);
+    border-inline-end: 2px solid var(--c-ink-2);
+    translate: 0 -70%;
+    rotate: 45deg;
+    pointer-events: none;
+}
+
+.input--select {
+    appearance: none;
+    padding-inline-end: calc(var(--space-4) * 2 + 8px);
+    border-radius: var(--radius-pill-token);
+    cursor: pointer;
+}
+
+.select--small .input--select {
+    min-inline-size: 7.5em;
+}
+
+/* A unit or currency mark inside the field, where the locale puts it. */
+.affix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.affix .input {
+    padding-inline-end: calc(var(--space-4) + 3.5em);
+}
+
+.affix__text {
+    position: absolute;
+    inset-inline-end: var(--space-4);
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-semibold);
+    pointer-events: none;
+}
+
+.affix--before .input {
+    padding-inline: calc(var(--space-4) + 3.5em) var(--space-4);
+}
+
+.affix--before .affix__text {
+    inset-inline: var(--space-4) auto;
+}
+
+.input--cell {
+    min-inline-size: 5.5em;
+    padding-inline: var(--space-2);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------- checks & toggles */
+
+.checklist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.check {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding-inline: var(--space-3) var(--space-4);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.check:hover {
+    border-color: var(--c-ink-2);
+}
+
+.check:has(input:checked) {
+    border-color: var(--c-accent);
+    background: var(--c-accent-soft);
+}
+
+.check:has(input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* A bare check is only its box: in table rows and the select-all cell. */
+.check--bare {
+    padding: 0;
+    border: 0;
+    background: none;
+    min-inline-size: var(--tap);
+    justify-content: center;
+}
+
+.check--bare:has(input:checked) {
+    background: none;
+}
+
+.check--small {
+    border: 0;
+    padding-inline: 0;
+    background: none;
+}
+
+.check input,
+.toggle input,
+.radio-card input,
+.swatch-pick input,
+.segmented__input {
+    position: absolute;
+    opacity: 0;
+    inline-size: 1px;
+    block-size: 1px;
+}
+
+.check__box {
+    position: relative;
+    flex: none;
+    inline-size: 20px;
+    block-size: 20px;
+    border: 2px solid var(--c-ink-2);
+    border-radius: 6px;
+    background: var(--c-surface);
+    transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.check input:checked + .check__box,
+.check input:indeterminate + .check__box {
+    background: var(--c-accent);
+    border-color: var(--c-accent);
+}
+
+.check input:checked + .check__box::after {
+    content: '';
+    position: absolute;
+    inset: 2px 5px 5px;
+    border-block-end: 2px solid var(--c-surface);
+    border-inline-end: 2px solid var(--c-surface);
+    rotate: 45deg;
+}
+
+/* The tick's slant does not follow the reading direction. */
+.check input:checked + .check__box:dir(rtl)::after {
+    rotate: -45deg;
+}
+
+.check input:indeterminate + .check__box::after {
+    content: '';
+    position: absolute;
+    inset: 50% 3px auto;
+    block-size: 2px;
+    background: var(--c-surface);
+    translate: 0 -50%;
+}
+
+.check input:focus-visible + .check__box,
+.toggle input:focus-visible + .toggle__track,
+.swatch-pick input:focus-visible + .swatch-pick__dot,
+.segmented__input:focus-visible + .segmented__option {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+}
+
+.toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: var(--tap);
+    cursor: pointer;
+    font-weight: var(--weight-semibold);
+}
+
+.toggle__track {
+    position: relative;
+    flex: none;
+    inline-size: 44px;
+    block-size: 26px;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-line);
+    transition: background-color var(--dur-fast) var(--ease);
+}
+
+.toggle__thumb {
+    position: absolute;
+    inset-block-start: 3px;
+    inset-inline-start: 3px;
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: 50%;
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+    transition: inset-inline-start var(--dur-fast) var(--ease);
+}
+
+.toggle input:checked + .toggle__track {
+    background: var(--c-accent);
+}
+
+.toggle input:checked + .toggle__track .toggle__thumb {
+    inset-inline-start: 21px;
+}
+
+.toggle input:disabled + .toggle__track {
+    opacity: 0.5;
+}
+
+.radio-cards {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+
+.radio-card {
+    position: relative;
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-tile);
+    background: var(--c-surface);
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.radio-card:hover {
+    border-color: var(--c-ink-2);
+}
+
+.radio-card:has(input:checked) {
+    border-color: var(--c-accent);
+    background: var(--c-accent-soft);
+}
+
+.radio-card:has(input:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+}
+
+.radio-card__title {
+    font-weight: var(--weight-semibold);
+}
+
+.radio-card__hint {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+}
+
+/* Pressed thumb on a sunken track, as in the editor reference. Works for radio
+   inputs (forms) and for buttons with aria-pressed / aria-selected (tools). */
+.segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    max-inline-size: 100%;
+}
+
+.segmented__option {
+    display: inline-grid;
+    place-items: center;
+    min-block-size: calc(var(--tap) - var(--space-2));
+    padding-inline: var(--space-4);
+    border: 0;
+    border-radius: var(--radius-pill-token);
+    background: transparent;
+    color: var(--c-ink-2);
+    font: inherit;
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.segmented__option:hover {
+    color: var(--c-ink);
+}
+
+.segmented__input:checked + .segmented__option,
+.segmented__option[aria-pressed='true'],
+.segmented__option[aria-selected='true'] {
+    background: var(--c-surface);
+    color: var(--c-ink);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Touch targets stay 44px tall where the pointer is a finger. */
+@media (pointer: coarse) {
+    .segmented__option {
+        min-block-size: var(--tap);
+    }
+}
+
+.swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.swatch-pick {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    cursor: pointer;
+}
+
+.swatch-pick__dot {
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: 50%;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 1px rgb(14 14 20 / 0.16);
+    transition: box-shadow var(--dur-fast) var(--ease);
+}
+
+.swatch-pick input:checked + .swatch-pick__dot {
+    box-shadow: inset 0 0 0 1px rgb(14 14 20 / 0.16), 0 0 0 3px var(--c-surface), 0 0 0 5px var(--c-accent);
+}
+
+/* Sold out or not offered: struck through, and the reason is in the label. */
+.swatch-pick:has(input:disabled) {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.swatch-pick:has(input:disabled)::after {
+    content: '';
+    position: absolute;
+    inline-size: 34px;
+    block-size: 2px;
+    background: var(--c-ink);
+    rotate: -45deg;
+}
+
+/* ---------------------------------------------- error summary & sections */
+
+.error-summary {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--c-danger);
+    border-radius: var(--r-tile);
+    background: var(--c-surface);
+}
+
+.error-summary:focus {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+}
+
+.error-summary__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--c-danger);
+    font-size: var(--fs-emph);
+}
+
+.error-summary__list {
+    display: grid;
+    gap: var(--space-1);
+    padding-inline-start: var(--space-6);
+}
+
+.error-summary__list a {
+    color: var(--c-ink);
+    text-underline-offset: 3px;
+}
+
+.error-summary__hint {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+}
+
+.form-section {
+    border-block-start: 1px solid var(--c-line);
+}
+
+.form-section__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: calc(var(--tap) + var(--space-4));
+    padding-block: var(--space-3);
+    list-style: none;
+    cursor: pointer;
+}
+
+.form-section__head::-webkit-details-marker {
+    display: none;
+}
+
+.form-section__titles {
+    display: grid;
+    flex: 1;
+    min-inline-size: 0;
+}
+
+.form-section__title {
+    font-size: var(--fs-emph);
+    font-weight: var(--weight-semibold);
+}
+
+.form-section__help {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+}
+
+.form-section__chevron {
+    display: grid;
+    place-items: center;
+    color: var(--c-ink-2);
+    transition: rotate var(--dur-fast) var(--ease);
+}
+
+/* Closed it points along the line; open it points down. */
+.form-section[open] .form-section__chevron {
+    rotate: 90deg;
+}
+
+.form-section__body {
+    padding-block-end: var(--space-5);
+}
+
+/* -------------------------------------------------------- the save bar */
+
+.save-bar {
+    position: fixed;
+    inset-block-end: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+    inset-inline: var(--admin-gutter);
+    z-index: 150;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-4);
+    max-inline-size: 760px;
+    margin-inline: auto;
+    padding-block: var(--space-3);
+    padding-inline: var(--space-5) var(--space-3);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-night);
+    color: var(--c-night-ink);
+    box-shadow: var(--shadow-md);
+    animation: save-bar-in var(--dur-fast) var(--ease);
+}
+
+.save-bar[hidden] {
+    display: none;
+}
+
+.save-bar__text {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--weight-semibold);
+}
+
+.save-bar__dot {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: var(--c-night-ink);
+}
+
+.save-bar__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.save-bar .button--secondary {
+    background: transparent;
+    border-color: var(--c-night-ink-2);
+    color: var(--c-night-ink);
+}
+
+.save-bar .button--secondary:hover {
+    border-color: var(--c-night-ink);
+}
+
+.save-bar :focus-visible {
+    outline-color: var(--c-night-ink);
+}
+
+/* A watched form leaves room under its last field for the bar. */
+form[data-watch] {
+    padding-block-end: calc(var(--tap) + var(--space-7));
+}
+
+@keyframes save-bar-in {
+    from {
+        opacity: 0;
+        translate: 0 8px;
+    }
+}
+
+@media (max-width: 479px) {
+    .save-bar {
+        border-radius: var(--r-panel);
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .save-bar__actions {
+        flex: 1;
+    }
+
+    .save-bar__actions .button {
+        flex: 1;
+    }
+}
+
+/* ------------------------------------------------------------ dialogs */
+
+.button--danger-solid {
+    background: var(--c-danger);
+    border-color: var(--c-danger);
+    color: var(--c-surface);
+}
+
+.button--danger-solid:hover {
+    background: color-mix(in srgb, var(--c-danger) 88%, var(--c-ink));
+    border-color: color-mix(in srgb, var(--c-danger) 88%, var(--c-ink));
+}
+
+.button--small {
+    padding-inline: var(--space-3);
+    font-size: var(--fs-caption);
+}
+
+.dialog {
+    inline-size: min(440px, calc(100% - var(--space-4) * 2));
+    margin: auto;
+    padding: var(--space-5);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    color: var(--c-ink);
+    box-shadow: var(--shadow-md);
+}
+
+.dialog[open] {
+    display: grid;
+    gap: var(--space-5);
+    animation: dialog-in var(--dur-fast) var(--ease);
+}
+
+.dialog::backdrop {
+    background: rgb(14 14 20 / 0.45);
+}
+
+.dialog__body {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.dialog__icon {
+    display: grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    margin-block-end: var(--space-2);
+    border-radius: 50%;
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+}
+
+.dialog__icon--danger {
+    background: color-mix(in srgb, var(--c-danger) 10%, var(--c-surface));
+    color: var(--c-danger);
+}
+
+.dialog__title {
+    font-size: var(--fs-card-title);
+    line-height: var(--leading-tight);
+    text-wrap: balance;
+}
+
+.dialog__text {
+    color: var(--c-ink-2);
+    max-inline-size: 60ch;
+}
+
+.dialog__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+@keyframes dialog-in {
+    from {
+        opacity: 0;
+        scale: 0.97;
+    }
+}
+
+/* ------------------------------------------------------------- toasts */
+
+.toasts {
+    position: fixed;
+    inset-block-end: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+    inset-inline-end: var(--admin-gutter);
+    z-index: 200;
+    display: grid;
+    gap: var(--space-2);
+    inline-size: min(380px, calc(100% - var(--admin-gutter) * 2));
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4) var(--space-2);
+    border-radius: var(--r-tile);
+    background: var(--c-night);
+    color: var(--c-night-ink);
+    box-shadow: var(--shadow-md);
+    pointer-events: auto;
+    animation: toast-in var(--dur-fast) var(--ease);
+}
+
+.toast--error {
+    background: var(--c-danger);
+    color: var(--c-surface);
+}
+
+.toast--leaving {
+    opacity: 0;
+    translate: 0 6px;
+    transition: opacity var(--dur-fast) var(--ease), translate var(--dur-fast) var(--ease);
+}
+
+.toast__text {
+    flex: 1;
+    min-inline-size: 0;
+    font-weight: var(--weight-semibold);
+}
+
+.toast__close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.toast__close:hover {
+    background: rgb(255 255 255 / 0.12);
+}
+
+.toast :focus-visible {
+    outline-color: currentColor;
+}
+
+/* While a save bar is up the toasts sit above it. */
+body:has(.save-bar:not([hidden])) .toasts {
+    inset-block-end: calc(var(--tap) + var(--space-8));
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        translate: 0 8px;
+    }
+}
+
+/* -------------------------------------------------------- stock matrix */
+
+.stock-matrix {
+    overflow-x: auto;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-tile);
+    background: var(--c-surface);
+}
+
+.stock-matrix__table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.stock-matrix__table th,
+.stock-matrix__table td {
+    padding: var(--space-2) var(--space-3);
+    border-block-end: 1px solid var(--c-line);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.stock-matrix__table thead th {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-semibold);
+}
+
+.stock-matrix__table tbody th,
+.stock-matrix__table tfoot th {
+    text-align: start;
+    font-weight: var(--weight-semibold);
+}
+
+.stock-matrix__table tbody th .swatch {
+    margin-inline-end: var(--space-2);
+    vertical-align: middle;
+}
+
+.stock-matrix__table tfoot td,
+.stock-matrix__table tfoot th {
+    border-block-end: 0;
+    background: var(--c-surface-2);
+}
+
+.stock-matrix__total {
+    font-weight: var(--weight-semibold);
+}
+
+.stock-matrix__grand {
+    color: var(--c-accent);
+}
+
+.stock-matrix__none {
+    color: var(--c-ink-2);
+}
+
+/* ------------------------------------------------------------ dropzone */
+
+.dropzone {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.dropzone__frame {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: var(--drop-ratio, 4 / 3);
+    max-inline-size: 100%;
+    overflow: hidden;
+    border: 1px dashed var(--c-ink-2);
+    border-radius: var(--r-tile);
+    background: var(--c-surface-2);
+    transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.dropzone--filled .dropzone__frame,
+.dropzone:has(.dropzone__preview:not([hidden])) .dropzone__frame {
+    border-style: solid;
+    border-color: var(--c-line);
+}
+
+.dropzone--over .dropzone__frame {
+    border-color: var(--c-accent);
+    border-style: solid;
+    background: var(--c-accent-soft);
+}
+
+.dropzone--warn .dropzone__frame {
+    border-color: var(--c-danger);
+}
+
+.dropzone--removed .dropzone__preview {
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
+.dropzone__preview {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+}
+
+.dropzone__empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    color: var(--c-ink-2);
+    text-align: center;
+}
+
+.dropzone__icon {
+    display: grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    border-radius: 50%;
+    background: var(--c-surface);
+    color: var(--c-accent);
+}
+
+.dropzone__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+/* The real file input stays in the form and in the tab order, out of sight;
+   its visible face is the label button beside it. */
+.dropzone__input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
+}
+
+.dropzone__bar:has(.dropzone__input:focus-visible) .button {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+}
+
+.dropzone__status {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+}
+
+.dropzone__status:empty {
+    display: none;
+}
+
+.dropzone--warn .dropzone__status {
+    color: var(--c-danger);
+    font-weight: var(--weight-semibold);
+}
