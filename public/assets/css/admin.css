@@ -179,7 +179,9 @@ code {
 
 /* --------------------------------------------------------------- top bar */
 
-.topbar {
+/* The bar's own class names: hero.css (loaded for the fonts) styles .topbar
+   and .topbar__nav for the storefront, and none of that may reach here. */
+.admin-bar {
     position: sticky;
     inset-block-start: 0;
     z-index: 100;
@@ -192,34 +194,38 @@ code {
     background: var(--c-canvas);
 }
 
-.topbar__brand {
+.admin-bar__brand {
     display: inline-flex;
     align-items: center;
     min-block-size: var(--tap);
     flex: none;
     color: var(--c-ink);
     text-decoration: none;
-    font-weight: var(--weight-bold);
 }
 
-.topbar__brand .brand__logo {
+.admin-bar__brand .brand__logo {
     display: block;
     block-size: 24px;
     inline-size: auto;
 }
 
-/* The sections scroll inside their own pill when they do not fit: on a phone,
-   and on a 1024px screen in English. The page itself never scrolls sideways. */
-.topbar__nav {
+/* Two classes: .icon-button, further down, would otherwise show it. */
+.admin-bar .admin-bar__menu {
+    display: none;
+}
+
+.admin-nav {
     min-inline-size: 0;
     flex: 0 1 auto;
     margin-inline: auto;
 }
 
-.topbar__sections {
+/* The dark pill. At least 8px of it shows round the active one, so the
+   accent never touches the pill's edge. */
+.admin-nav__groups {
     display: flex;
     gap: var(--space-1);
-    padding: var(--space-1);
+    padding: var(--space-2);
     list-style: none;
     border-radius: var(--radius-pill-token);
     background: var(--c-night);
@@ -227,39 +233,92 @@ code {
     scrollbar-width: none;
 }
 
-.topbar__link {
+.admin-nav__link {
     display: inline-flex;
     align-items: center;
+    gap: var(--space-2);
     min-block-size: var(--tap);
     padding-inline: var(--space-4);
     border-radius: var(--radius-pill-token);
-    color: var(--c-night-ink-2);
+    color: var(--c-night-ink);
+    font-weight: var(--weight-semibold);
     text-decoration: none;
     white-space: nowrap;
     transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
 }
 
-.topbar__link:hover {
-    color: var(--c-night-ink);
+.admin-nav__link .icon {
+    color: var(--c-night-ink-2);
+}
+
+.admin-nav__link:hover {
     background: var(--c-night-2);
 }
 
-.topbar__link[aria-current='page'] {
+.admin-nav__link[aria-current='page'] {
     background: var(--c-accent);
     color: var(--c-surface);
-    font-weight: var(--weight-semibold);
 }
 
-.topbar__link:focus-visible {
-    outline-color: var(--c-night-ink);
+.admin-nav__link[aria-current='page'] .icon {
+    color: currentColor;
+}
+
+.admin-nav__link:focus-visible {
+    outline: 2px solid var(--c-night-ink);
     outline-offset: -4px;
 }
 
-.topbar__actions {
+.admin-bar__actions {
     display: flex;
     align-items: center;
     gap: var(--space-2);
     flex: none;
+}
+
+/* The pages of the section in use: a row of tabs under the bar. */
+.admin-tabs {
+    padding-inline: max(var(--admin-gutter), (100% - var(--admin-max)) / 2 + var(--admin-gutter));
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.admin-tabs__list {
+    display: flex;
+    gap: var(--space-1);
+    inline-size: max-content;
+    padding: var(--space-1);
+    list-style: none;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+}
+
+.admin-tabs__link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: calc(var(--tap) - var(--space-2));
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-pill-token);
+    color: var(--c-ink-2);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.admin-tabs__link:hover {
+    color: var(--c-ink);
+}
+
+.admin-tabs__link[aria-current='page'] {
+    background: var(--c-surface);
+    color: var(--c-ink);
+    box-shadow: var(--shadow-sm);
+}
+
+@media (pointer: coarse) {
+    .admin-tabs__link {
+        min-block-size: var(--tap);
+    }
 }
 
 .lang-switch {
@@ -292,21 +351,84 @@ code {
     color: var(--c-ink);
 }
 
-@media (max-width: 767px) {
-    .topbar {
-        flex-wrap: wrap;
-        position: static;
+/* Narrower than the labels need: icons, named by their tooltip and label. */
+@media (max-width: 1023px) {
+    .admin-nav__link {
+        padding-inline: var(--space-3);
     }
 
-    .topbar__actions {
+    .admin-nav__label {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
+/* A phone: the groups fold into a menu. With no script the menu button never
+   shows and the groups stay a row that scrolls inside itself. */
+@media (max-width: 767px) {
+    .admin-bar {
+        flex-wrap: wrap;
+        position: static;
+        gap: var(--space-2) var(--space-3);
+    }
+
+    .admin-bar__actions {
         margin-inline-start: auto;
     }
 
-    /* The sections take their own row, full width, below logo and actions. */
-    .topbar__nav {
+    /* The avatar only names who is signed in; the row needs the room. */
+    .admin-bar__actions .avatar {
+        display: none;
+    }
+
+    .admin-nav {
         order: 3;
         flex: 1 0 100%;
         margin-inline: 0;
+    }
+
+    .admin-nav__label {
+        position: static;
+        inline-size: auto;
+        block-size: auto;
+        clip-path: none;
+    }
+
+    .admin-bar[data-menu] .admin-bar__menu {
+        display: inline-grid;
+        order: 1;
+    }
+
+    .admin-bar[data-menu] .admin-nav {
+        display: none;
+    }
+
+    .admin-bar[data-menu='open'] .admin-nav {
+        display: block;
+    }
+
+    /* Open, the groups are a list down the screen with full labels. */
+    .admin-bar[data-menu] .admin-nav__groups {
+        flex-direction: column;
+        border-radius: var(--r-panel);
+    }
+
+    .admin-bar[data-menu] .admin-nav__link {
+        inline-size: 100%;
+    }
+
+    .admin-bar__menu[aria-expanded='true'] {
+        background: var(--c-night);
+        border-color: var(--c-night);
+        color: var(--c-night-ink);
+    }
+
+    .admin-tabs {
+        padding-block-start: var(--space-2);
     }
 }
 

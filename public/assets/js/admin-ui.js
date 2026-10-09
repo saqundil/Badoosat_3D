@@ -10,9 +10,39 @@
  *   a[data-loads="x"]      marks [data-loading-target="x"] busy while the next
  *                          page loads, so the card shows its skeleton instead of
  *                          a stale order.
+ *   [data-admin-bar]       on a phone the section groups fold into a menu button;
+ *                          the fold only happens once this file has run, so
+ *                          without it the groups stay a scrolling row.
  *
  * Strings come from the page (data-confirm), never from here.
  */
+
+const bar = document.querySelector('[data-admin-bar]');
+const menuButton = bar?.querySelector('[data-nav-toggle]');
+
+if (bar && menuButton) {
+    bar.dataset.menu = 'closed';
+
+    const setMenu = (open) => {
+        bar.dataset.menu = open ? 'open' : 'closed';
+        menuButton.setAttribute('aria-expanded', String(open));
+    };
+
+    menuButton.addEventListener('click', () => setMenu(bar.dataset.menu !== 'open'));
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && bar.dataset.menu === 'open') {
+            setMenu(false);
+            menuButton.focus();
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (bar.dataset.menu === 'open' && event.target instanceof Node && !bar.contains(event.target)) {
+            setMenu(false);
+        }
+    });
+}
 
 for (const panel of document.querySelectorAll('[data-notch]')) {
     const tabs = panel.querySelector('[data-notch-tabs] .tabs');
