@@ -7,6 +7,7 @@
  *                               and [data-discard] puts every control back.
  *   [data-count-for]            live character counter for a field with maxlength.
  *   [data-error-summary]        takes focus on load; its links focus the control.
+ *   [data-uncheck-confirm]      asks in a <dialog> before a box is unticked.
  *   [data-dialog-open="<id>"]   opens <dialog id> instead of submitting; the
  *                               dialog's own button submits (see form/dialog.php).
  *   [data-toasts]               toast region; window.adminToast(text, kind) adds one.
@@ -76,6 +77,11 @@ document.addEventListener('click', (event) => {
     }
 
     form.reset();
+    // reset() leaves a hidden field's value alone; the ones script changed
+    // remember what they started as.
+    for (const el of form.querySelectorAll('input[type="hidden"][data-initial]')) {
+        el.value = el.dataset.initial;
+    }
     // reset() fires no input events; the counters, previews and totals listen for them.
     for (const el of form.elements) {
         el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -205,6 +211,68 @@ document.addEventListener('click', (event) => {
             el.close();
         }
     }
+});
+
+/* -------------------------------------------------- ask before unticking */
+
+// Unticking a box with data-uncheck-confirm="<dialog id>" opens that dialog,
+// filled from the box's data-uncheck-title, -text and -items (a JSON list of
+// names). Keeping puts the tick back. Accepting leaves it off and sets the
+// form's [data-uncheck-confirmed] field to 1, so the server knows the question
+// was asked; without script the server asks instead.
+document.addEventListener('change', (event) => {
+    const box = event.target;
+
+    if (!(box instanceof HTMLInputElement) || !box.dataset.uncheckConfirm || box.checked) {
+        return;
+    }
+
+    const dialog = document.getElementById(box.dataset.uncheckConfirm);
+
+    if (!(dialog instanceof HTMLDialogElement)) {
+        return;
+    }
+
+    const fill = (name) => dialog.querySelector('[data-fill="' + name + '"]');
+    fill('title').textContent = box.dataset.uncheckTitle || '';
+    fill('text').textContent = box.dataset.uncheckText || '';
+    fill('items').replaceChildren(...JSON.parse(box.dataset.uncheckItems || '[]').map((text) => {
+        const item = document.createElement('li');
+        item.textContent = text;
+        return item;
+    }));
+
+    const accept = dialog.querySelector('[data-uncheck-accept]');
+    const keep = dialog.querySelector('[data-uncheck-keep]');
+    let accepted = false;
+    const onAccept = () => {
+        accepted = true;
+        dialog.close();
+    };
+    const onKeep = () => dialog.close();
+
+    accept.addEventListener('click', onAccept);
+    keep.addEventListener('click', onKeep);
+
+    // Esc and a click on the backdrop close it too, and both mean "keep".
+    dialog.addEventListener('close', () => {
+        accept.removeEventListener('click', onAccept);
+        keep.removeEventListener('click', onKeep);
+
+        if (accepted) {
+            const flag = box.form?.querySelector('[data-uncheck-confirmed]');
+            if (flag) {
+                flag.dataset.initial ??= flag.value;
+                flag.value = '1';
+            }
+        } else {
+            box.checked = true;
+            box.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        box.focus();
+    }, { once: true });
+
+    dialog.showModal();
 });
 
 /* -------------------------------------------------------------------- toasts */

@@ -31,7 +31,8 @@ declare(strict_types=1);
  * @var ?int    $maxlength counter shown when set
  * @var ?string $unit      suffix for number fields (cm, %, …)
  * @var ?string $dir       'auto' for free text that may be in either script
- * @var array<int,array{value:string|int,label:string,hint?:string,hex?:string,disabled?:bool,reason?:string}> $options
+ * @var array<int,array{value:string|int,label:string,hint?:string,hex?:string,disabled?:bool,reason?:string,attrs?:array<string,string>}> $options
+ *      hex draws a colour dot in a checklist or swatch; attrs are extra attributes on that option's input
  * @var array<string,string|int|bool> $attrs extra attributes on the control
  * @var bool    $hideLabel  keep the label for screen readers only
  */
@@ -112,9 +113,11 @@ $labelText = e($label) . ($required ? ' <span class="form-field__req" aria-hidde
                     $oid = $id . '-' . $i; ?>
                     <label class="check" for="<?= e($oid) ?>">
                         <input type="checkbox" id="<?= e($oid) ?>" name="<?= e($name) ?>[]" value="<?= e((string) $option['value']) ?>"
-                            <?= in_array((string) $option['value'], $chosen, true) ? ' checked' : '' ?><?= !empty($option['disabled']) ? ' disabled' : '' ?>>
+                            <?= in_array((string) $option['value'], $chosen, true) ? ' checked' : '' ?><?= !empty($option['disabled']) ? ' disabled' : '' ?><?php
+                            foreach ($option['attrs'] ?? [] as $k => $v) { echo ' ' . e((string) $k) . '="' . e((string) $v) . '"'; } ?>>
                         <span class="check__box" aria-hidden="true"></span>
-                        <span class="check__text"><?= e($option['label']) ?></span>
+                        <?php if (isset($option['hex'])) { ?><span class="swatch swatch--on-light" style="--swatch: <?= e((string) $option['hex']) ?>" aria-hidden="true"></span><?php } ?>
+                        <span class="check__text"><bdi><?= e($option['label']) ?></bdi></span>
                     </label>
                 <?php } ?>
             </div>

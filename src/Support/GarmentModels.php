@@ -46,9 +46,12 @@ final class GarmentModels
         return is_string($file) && $file !== '' ? $file : null;
     }
 
+    /** The model's name in the current language: label_<locale>, else label (Arabic). */
     public static function labelFor(string $key): string
     {
-        return (string) (self::all()[$key]['label'] ?? $key);
+        $model = self::all()[$key] ?? [];
+
+        return (string) ($model['label_' . Lang::locale()] ?? $model['label'] ?? $key);
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Service\GarmentService;
 use App\Service\ValidationException;
 use App\Support\Auth;
 use App\Support\Csrf;
+use App\Support\Lang;
 use App\Support\Response;
 
 Auth::require();
@@ -27,9 +28,10 @@ try {
     Csrf::session();
     $_SESSION['errors'] = $error->errors();
     $_SESSION['old'] = $_POST;
-    Response::redirect('/admin/garments.php' . ($id > 0 ? '?id=' . $id : ''));
+    // Back to the form it came from: the type's own, or a new one's.
+    Response::redirect('/admin/garments.php?' . ($id > 0 ? 'id=' . $id : 'new=1'));
 }
 
 Csrf::session();
-$_SESSION['notice'] = 'حُفظ النوع.';
+$_SESSION['notice'] = Lang::get('admin.garments.saved');
 Response::redirect('/admin/garments.php?id=' . $id);

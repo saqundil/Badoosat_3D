@@ -40,11 +40,15 @@ declare(strict_types=1);
  *
  * The admin garment screen prints this state on the page, so nobody has to read
  * this comment to discover it.
+ *
+ * `label` is the Arabic name; `label_en` (any `label_<locale>`) is used by
+ * GarmentModels::labelFor() when the dashboard is in that language.
  */
 
 return [
     'premium-basic' => [
         'label'    => 'قصّة أساسية فاخرة',
+        'label_en' => 'Premium Basic Cut',
         'file'     => '/models/tshirt.glb',
         'geometry' => 'tshirt',
         // See the note above: awaiting its own measured mesh.
@@ -52,6 +56,7 @@ return [
     ],
     'graphic-premium' => [
         'label'    => 'قصّة فاخرة للطباعة',
+        'label_en' => 'Graphic Premium Cut',
         'file'     => '/models/tshirt.glb',
         'geometry' => 'tshirt',
         // See the note above: awaiting its own measured mesh.

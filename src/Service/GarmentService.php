@@ -8,6 +8,7 @@ use App\Repository\GarmentRepository;
 use App\Repository\ProductRepository;
 use App\Support\Db;
 use App\Support\GarmentModels;
+use App\Support\Lang;
 use App\Support\Validator;
 use PDO;
 use Throwable;
@@ -85,7 +86,7 @@ final class GarmentService
             'base_product' => null,
             'base_product_name' => null,
             'base_product_printed' => false,
-            'editor_problem' => 'النوع الجديد بلا منتج أساسي بعد، فلا يظهر في المحرر.',
+            'editor_problem' => Lang::get('admin.garments.problem.new'),
             'print_area_w_cm' => '28.0',
             'print_area_h_cm' => '35.0',
             'is_active' => 1,
@@ -133,6 +134,24 @@ final class GarmentService
     public function impactOfColors(int $garmentId, array $colorIds): array
     {
         return $garmentId > 0 ? $this->garments->productsLosingColors($garmentId, $colorIds) : [];
+    }
+
+    /**
+     * Every colour of this type that products use, with those products' names:
+     * colour id => list of names. The edit screen hands this to the dialog
+     * that asks before a colour is unticked.
+     *
+     * @return array<int,array<int,string>>
+     */
+    public function colourUsage(int $garmentId): array
+    {
+        $usage = [];
+
+        foreach ($this->impactOfColors($garmentId, []) as $row) {
+            $usage[(int) $row['color_id']][(int) $row['id']] = (string) $row['name'];
+        }
+
+        return array_map('array_values', $usage);
     }
 
     /** @throws ValidationException */
@@ -191,20 +210,31 @@ final class GarmentService
     /** @return array<string,string> */
     private function validate(array $input, int $id): array
     {
+        $label = static fn (string $field): string => Lang::get('admin.garments.f.' . $field);
+
         $validator = new Validator($input);
-        $validator->required('key', 'المُعرّف')->maxLength('key', 60, 'المُعرّف');
-        $validator->required('name_ar', 'الاسم بالعربية')->maxLength('name_ar', 120, 'الاسم بالعربية');
-        $validator->required('name_en', 'الاسم بالإنجليزية')->maxLength('name_en', 120, 'الاسم بالإنجليزية');
-        $validator->decimal('print_area_w_cm', 1.0, 200.0, 'عرض مساحة الطباعة');
-        $validator->decimal('print_area_h_cm', 1.0, 200.0, 'ارتفاع مساحة الطباعة');
-        $validator->integer('sort_order', 0, 999, 'الترتيب');
+        $validator->required('key', $label('key'))->maxLength('key', 60, $label('key'));
+        $validator->required('name_ar', $label('name_ar'))->maxLength('name_ar', 120, $label('name_ar'));
+        $validator->required('name_en', $label('name_en'))->maxLength('name_en', 120, $label('name_en'));
+        $validator->decimal('print_area_w_cm', 1.0, 200.0, $label('print_area_w_cm'));
+        $validator->decimal('print_area_h_cm', 1.0, 200.0, $label('print_area_h_cm'));
+        $validator->integer('sort_order', 0, 999, $label('sort_order'));
 
         $key = $validator->string('key');
+        $stored = $id > 0 ? $this->garments->find($id) : null;
+        $inUse = $id > 0 ? $this->garments->productCount($id) : 0;
 
         if ($key !== '' && !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $key)) {
-            $validator->fail('key', 'المُعرّف يقبل أحرفًا إنجليزية صغيرة وأرقامًا وشرطات فقط.');
+            $validator->fail('key', Lang::get('admin.garments.err.key_format'));
         } elseif ($key !== '' && $this->garments->keyExists($key, $id)) {
-            $validator->fail('key', 'المُعرّف مستخدم لنوع آخر.');
+            $validator->fail('key', Lang::get('admin.garments.err.key_taken'));
+        } elseif ($stored !== null && $inUse > 0 && $key !== (string) $stored['key']) {
+            /*
+             * The key is in the storefront's addresses for this cut, so once a
+             * product is built on it, it stays. The screen locks the field;
+             * this is the same rule for a request that did not come from it.
+             */
+            $validator->fail('key', Lang::get('admin.garments.err.key_locked', ['key' => (string) $stored['key']]));
         }
 
         /*
@@ -215,7 +245,7 @@ final class GarmentService
         $modelKey = (string) ($input['model_key'] ?? '');
 
         if (!GarmentModels::has($modelKey)) {
-            $validator->fail('model_key', 'المجسم المختار غير موجود في السجلّ.');
+            $validator->fail('model_key', Lang::get('admin.garments.err.model'));
         }
 
         /*
@@ -236,8 +266,7 @@ final class GarmentService
             }
         } elseif ($baseProductId > 0 && $id < 1) {
             /* A product cannot belong to a type that does not exist yet. */
-            $validator->fail('base_product_id',
-                'احفظ النوع أولًا، ثم اختر منتجه الأساسي من منتجاته.');
+            $validator->fail('base_product_id', Lang::get('admin.garments.err.base_unsaved'));
         }
 
         $colorIds = self::idList($input['colors'] ?? []);
@@ -250,15 +279,15 @@ final class GarmentService
         $unknownSizes = array_diff($sizeIds, $knownSizes);
 
         if ($unknownColors !== []) {
-            $validator->fail('colors', 'لون غير معروف: ' . implode('، ', $unknownColors) . '.');
+            $validator->fail('colors', Lang::get('admin.garments.err.colour_unknown', ['ids' => implode(Lang::get('admin.list_sep'), $unknownColors)]));
         }
 
         if ($unknownSizes !== []) {
-            $validator->fail('sizes', 'مقاس غير معروف: ' . implode('، ', $unknownSizes) . '.');
+            $validator->fail('sizes', Lang::get('admin.garments.err.size_unknown', ['ids' => implode(Lang::get('admin.list_sep'), $unknownSizes)]));
         }
 
         if (count($sizeIds) > self::MAX_SIZES) {
-            $validator->fail('sizes', 'الحدّ الأقصى ' . self::MAX_SIZES . ' مقاسًا للنوع الواحد.');
+            $validator->fail('sizes', Lang::get('admin.garments.err.too_many_sizes', ['max' => self::MAX_SIZES]));
         }
 
         /*
@@ -267,8 +296,31 @@ final class GarmentService
          * type is being drafted, refused once it is active.
          */
         if (!empty($input['is_active']) && ($colorIds === [] || $sizeIds === [])) {
-            $validator->fail($colorIds === [] ? 'colors' : 'sizes',
-                'النوع المفعَّل يحتاج لونًا واحدًا ومقاسًا واحدًا على الأقل.');
+            $validator->fail($colorIds === [] ? 'colors' : 'sizes', Lang::get('admin.garments.err.active_needs'));
+        }
+
+        /*
+         * Taking a colour away from a type takes it away from every product
+         * built on it: the customer's editor stops offering it, and each of
+         * those products refuses it on its next save. The screen asks first and
+         * says which products; a save that has not been through that question
+         * (confirm_colours) is sent back with the same list.
+         */
+        if ($id > 0 && $unknownColors === [] && empty($input['confirm_colours'])) {
+            $losing = [];
+
+            foreach ($this->garments->productsLosingColors($id, $colorIds) as $row) {
+                $losing[(int) $row['id']] = (string) $row['name'];
+            }
+
+            if ($losing !== []) {
+                // Each name isolated: a list of names in one script inside a
+                // sentence in the other would otherwise reorder around the commas.
+                $validator->fail('colors', Lang::get('admin.garments.err.colours_unconfirmed', [
+                    'products' => implode(Lang::get('admin.list_sep'),
+                        array_map(static fn (string $n): string => "\u{2068}" . $n . "\u{2069}", $losing)),
+                ]));
+            }
         }
 
         return $validator->errors();
@@ -344,19 +396,18 @@ final class GarmentService
         $id = (int) $type['id'];
 
         if ((int) $type['is_active'] !== 1) {
-            return 'النوع معطَّل، فلا يظهر في المحرر.';
+            return Lang::get('admin.garments.problem.inactive');
         }
 
         $baseId = (int) ($type['base_product_id'] ?? 0);
 
         if ($baseId < 1) {
-            return 'لا منتج أساسي لهذا النوع، فلا يظهر في المحرر. '
-                . 'المنتج الأساسي هو ما يصير إليه الطلب المخصّص: منه يأتي السعر والمخزون واللون والمقاس.';
+            return Lang::get('admin.garments.problem.no_base');
         }
 
         $problem = $this->garments->baseProductProblem($id, $baseId);
 
-        return $problem === null ? null : $problem . ' ولذلك لا يظهر النوع في المحرر.';
+        return $problem === null ? null : Lang::get('admin.garments.problem.base', ['problem' => $problem]);
     }
 
     /** The registry facts a screen needs beside the row. */

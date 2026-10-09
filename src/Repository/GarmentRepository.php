@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Support\Lang;
 use PDO;
 
 /**
@@ -144,19 +145,19 @@ final class GarmentRepository extends Repository
         $row = $stmt->fetch();
 
         if ($row === false) {
-            return 'المنتج الأساسي المختار غير موجود.';
+            return Lang::get('admin.garments.base.missing');
         }
 
         if ((int) $row['garment_id'] !== $garmentId) {
-            return 'المنتج الأساسي يجب أن يكون من منتجات هذا النوع نفسه.';
+            return Lang::get('admin.garments.base.other_type');
         }
 
         if ((int) $row['is_active'] !== 1) {
-            return 'المنتج الأساسي معطَّل. فعّله أو اختر غيره.';
+            return Lang::get('admin.garments.base.inactive');
         }
 
         if ((int) $row['active_variants'] < 1) {
-            return 'المنتج الأساسي بلا متغيّرات نشطة، فلا لون ولا مقاس ولا سعر لطلب مخصّص عليه.';
+            return Lang::get('admin.garments.base.no_variants');
         }
 
         return null;
@@ -301,7 +302,7 @@ final class GarmentRepository extends Repository
         $notIn = $ids === [] ? '' : ' AND pc.color_id NOT IN (' . self::placeholders(count($ids)) . ')';
 
         $stmt = $this->pdo()->prepare(
-            'SELECT p.id, p.name, p.slug, c.name AS color_name
+            'SELECT p.id, p.name, p.slug, c.id AS color_id, c.name AS color_name
                FROM product_colors pc
                JOIN products p ON p.id = pc.product_id
                JOIN colors c   ON c.id = pc.color_id

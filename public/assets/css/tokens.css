@@ -227,6 +227,8 @@
     --fs-figure: clamp(28px, 2.4vw, 36px);
 
     --admin-max: 1440px;
+    /* A form page reads in one column; wider lines only stretch the fields. */
+    --form-max: 960px;
     --focus-ring: 2px solid var(--c-accent);
     --focus-offset: 2px;
 

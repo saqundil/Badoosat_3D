@@ -700,6 +700,44 @@ code {
     color: var(--c-ink);
 }
 
+/* Something the owner should know, not an error: a white card with the
+   accent's icon. Written for the owner -- no file paths, no config names. */
+.alert--info {
+    display: grid;
+    gap: var(--space-2);
+    background: var(--c-surface);
+    border: 1px solid var(--c-line);
+    color: var(--c-ink);
+}
+
+.alert--info > .icon,
+.alert__title .icon {
+    color: var(--c-accent);
+    vertical-align: middle;
+}
+
+.alert__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--fs-small);
+    font-weight: var(--weight-semibold);
+}
+
+.alert__list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    color: var(--c-ink-2);
+}
+
+.alert__list a {
+    color: var(--c-ink);
+    font-weight: var(--weight-semibold);
+}
+
 .field {
     display: grid;
     gap: 5px;
@@ -1383,6 +1421,29 @@ textarea:focus-visible {
 
 .dash .alert {
     margin: 0;
+}
+
+/* Same start edge as every other page; only the column is narrower. */
+.dash--form > * {
+    max-inline-size: var(--form-max);
+}
+
+/* A swatch on a light ground needs a hairline, or white disappears. */
+.swatch--on-light {
+    box-shadow: 0 0 0 1px var(--c-line);
+}
+
+.swatch-row {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.swatch-row__more {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+    font-variant-numeric: tabular-nums;
 }
 
 /* ---------------------------------------------------------- page header */
@@ -2599,7 +2660,8 @@ legend.form-field__label {
     outline-offset: 0;
 }
 
-.input:disabled {
+.input:disabled,
+.input:read-only:not(select) {
     background: var(--c-surface-2);
     color: var(--c-ink-2);
     cursor: not-allowed;
@@ -3265,6 +3327,24 @@ form[data-watch] {
     max-inline-size: 60ch;
 }
 
+/* The things a confirmation is about, named one per line. */
+.dialog__list {
+    display: grid;
+    gap: var(--space-1);
+    max-block-size: 12rem;
+    margin: 0;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-5) var(--space-3);
+    overflow-y: auto;
+    border-radius: var(--r-tile);
+    background: var(--c-surface-2);
+    font-weight: var(--weight-semibold);
+}
+
+.dialog__list:empty {
+    display: none;
+}
+
 .dialog__actions {
     display: flex;
     flex-wrap: wrap;
@@ -3687,6 +3767,21 @@ body:has(.save-bar:not([hidden])) .toasts {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* A row's name that opens it: ink, not the browser's blue or visited purple,
+   and a full-height target. */
+a.cell-media__title {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    color: var(--c-ink);
+    text-decoration: none;
+}
+
+a.cell-media__title:hover {
+    color: var(--c-accent);
+    text-decoration: underline;
 }
 
 .cell-media__sub {
