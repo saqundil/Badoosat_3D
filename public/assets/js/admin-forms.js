@@ -46,7 +46,9 @@ const watched = new Map();
 
 const refresh = (form) => {
     const dirty = snapshot(form) !== watched.get(form);
-    const bar = document.querySelector('[data-save-bar="' + form.id + '"]');
+    // getAttribute, not form.id: a form with a field named "id" (every edit
+    // form posts one) answers form.id with that field.
+    const bar = document.querySelector('[data-save-bar="' + form.getAttribute('id') + '"]');
 
     form.toggleAttribute('data-dirty', dirty);
     if (bar) {

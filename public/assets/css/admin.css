@@ -3075,6 +3075,12 @@ legend.form-field__label {
     rotate: 90deg;
 }
 
+/* The chevron inside is mirrored in RTL (it points "forward"), so the turn
+   that brings it down is the opposite one. rotate has no logical form. */
+.form-section[open] .form-section__chevron:dir(rtl) {
+    rotate: -90deg;
+}
+
 .form-section__body {
     padding-block-end: var(--space-5);
 }
@@ -3586,7 +3592,9 @@ body:has(.save-bar:not([hidden])) .toasts {
     border-block-end: 0;
 }
 
+/* Restated here: the cell rule above resets every cell to start. */
 .data-table__cell--end {
+    text-align: end;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
