@@ -31,6 +31,7 @@ $toast     = $toast ?? null;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#f7f6fc">
     <title><?= e($title) ?> · <?= e(Lang::get('admin.title')) ?></title>
     <?php /*
         tokens.css first. admin.css points every one of its --admin-* variables

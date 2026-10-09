@@ -315,7 +315,7 @@ code {
     box-shadow: var(--shadow-sm);
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 767px) {
     .admin-tabs__link {
         min-block-size: var(--tap);
     }
@@ -384,6 +384,26 @@ code {
     .admin-bar__actions .avatar {
         display: none;
     }
+}
+
+@media (max-width: 479px) {
+    /* The shop is a tab away on a phone; the bar keeps the room for the menu. */
+    .admin-bar__actions a.icon-button[target='_blank'] {
+        display: none;
+    }
+
+    /* Brand, language, log out and the menu fit one 360px row this way;
+       every target keeps its 44px. */
+    .admin-bar {
+        column-gap: var(--space-2);
+    }
+
+    .lang-switch__item {
+        padding-inline: var(--space-2);
+    }
+}
+
+@media (max-width: 767px) {
 
     .admin-nav {
         order: 3;
@@ -398,9 +418,14 @@ code {
         clip-path: none;
     }
 
+    /* One row: brand, actions, then the menu button at the inline end. */
+    .admin-bar__actions {
+        order: 1;
+    }
+
     .admin-bar[data-menu] .admin-bar__menu {
         display: inline-grid;
-        order: 1;
+        order: 2;
     }
 
     .admin-bar[data-menu] .admin-nav {
@@ -720,11 +745,10 @@ code {
     min-width: 0;
 }
 
-input[type='text'],
-input[type='password'],
-input[type='number'],
-select,
-textarea {
+/* The pre-template pages' bare controls. Zero specificity (:where), so the
+   form system's classes win wherever they are used and the old pages, which
+   have nothing else on their inputs, look exactly as before. */
+:where(input[type='text'], input[type='password'], input[type='number'], select, textarea) {
     background: var(--admin-sunken);
     color: var(--admin-text);
     border: 1px solid var(--admin-line);
@@ -734,11 +758,11 @@ textarea {
     width: 100%;
 }
 
-textarea {
+:where(textarea) {
     resize: vertical;
 }
 
-input[type='color'] {
+:where(input[type='color']) {
     background: var(--admin-sunken);
     border: 1px solid var(--admin-line);
     border-radius: 6px;
@@ -756,7 +780,7 @@ textarea:focus-visible {
     outline-offset: 1px;
 }
 
-fieldset {
+:where(fieldset) {
     border: 1px solid var(--admin-line);
     border-radius: 8px;
     padding: 16px;
@@ -967,7 +991,7 @@ fieldset {
     }
 }
 
-legend {
+:where(legend) {
     padding: 0 8px;
     color: var(--admin-accent);
     font-size: 12px;
@@ -2124,6 +2148,8 @@ legend {
 }
 
 .swatch {
+    display: inline-block;
+    vertical-align: middle;
     inline-size: 14px;
     block-size: 14px;
     flex: none;
@@ -2427,6 +2453,14 @@ body.admin {
     accent-color: var(--c-accent);
     caret-color: var(--c-accent);
     scrollbar-color: var(--c-ink-2) transparent;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* A field reached by Tab or by an error link never lands under the sticky
+   bar at the top or the save bar at the bottom. */
+html:has(body.admin) {
+    scroll-padding-block: calc(var(--admin-bar-h) + var(--space-3)) calc(var(--tap) + var(--space-7));
 }
 
 body.admin ::selection {
@@ -2464,7 +2498,15 @@ body.admin ::selection {
     display: grid;
     gap: var(--space-2);
     min-inline-size: 0;
+    margin: 0;
+    padding: 0;
     border: 0;
+}
+
+legend.form-field__label {
+    padding: 0;
+    margin-block-end: var(--space-2);
+    font-size: inherit;
 }
 
 .form-field__label {
@@ -2579,6 +2621,12 @@ body.admin ::selection {
     translate: 0 -70%;
     rotate: 45deg;
     pointer-events: none;
+}
+
+/* Borders on the logical end and bottom: mirrored, the corner needs the
+   other turn to keep pointing down. */
+.select:dir(rtl)::after {
+    rotate: -45deg;
 }
 
 .input--select {
@@ -2826,6 +2874,11 @@ body.admin ::selection {
     font-size: var(--fs-caption);
 }
 
+/* On the selected card's tint the grey drops under 4.5:1. */
+.radio-card:has(input:checked) .radio-card__hint {
+    color: var(--c-ink);
+}
+
 /* Pressed thumb on a sunken track, as in the editor reference. Works for radio
    inputs (forms) and for buttons with aria-pressed / aria-selected (tools). */
 .segmented {
@@ -2866,9 +2919,11 @@ body.admin ::selection {
     box-shadow: var(--shadow-sm);
 }
 
-/* Touch targets stay 44px tall where the pointer is a finger. */
-@media (pointer: coarse) {
-    .segmented__option {
+/* Touch targets stay 44px tall where the pointer is a finger, and on any
+   phone-sized screen whatever the pointer says. */
+@media (pointer: coarse), (max-width: 767px) {
+    .segmented__option,
+    .lang-switch__item {
         min-block-size: var(--tap);
     }
 }
@@ -3093,6 +3148,27 @@ form[data-watch] {
     }
 }
 
+/* A button whose form is on its way: a spinner beside its label. */
+.button.is-busy {
+    pointer-events: none;
+}
+
+.button.is-busy::after {
+    content: '';
+    inline-size: 14px;
+    block-size: 14px;
+    border: 2px solid currentColor;
+    border-inline-end-color: transparent;
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+    to {
+        rotate: 1turn;
+    }
+}
+
 /* ------------------------------------------------------------ dialogs */
 
 .button--danger-solid {
@@ -3112,6 +3188,7 @@ form[data-watch] {
 }
 
 .dialog {
+    overscroll-behavior: contain;
     inline-size: min(440px, calc(100% - var(--space-4) * 2));
     margin: auto;
     padding: var(--space-5);
@@ -3257,11 +3334,10 @@ body:has(.save-bar:not([hidden])) .toasts {
 
 /* -------------------------------------------------------- stock matrix */
 
+/* No box of its own: it sits inside a form card, and a card in a card says
+   nothing the card did not. The totals band closes it instead. */
 .stock-matrix {
     overflow-x: auto;
-    border: 1px solid var(--c-line);
-    border-radius: var(--r-tile);
-    background: var(--c-surface);
 }
 
 .stock-matrix__table {
@@ -3326,6 +3402,8 @@ body:has(.save-bar:not([hidden])) .toasts {
     place-items: center;
     aspect-ratio: var(--drop-ratio, 4 / 3);
     max-inline-size: 100%;
+    /* A tall slot in a wide column would push the form down a whole screen. */
+    max-block-size: 320px;
     overflow: hidden;
     border: 1px dashed var(--c-ink-2);
     border-radius: var(--r-tile);
@@ -3678,6 +3756,11 @@ body:has(.save-bar:not([hidden])) .toasts {
     display: none;
 }
 
+.bulk-bar .badge {
+    background: var(--c-night-ink);
+    color: var(--c-night);
+}
+
 .bulk-bar__count {
     display: flex;
     align-items: center;
@@ -3868,12 +3951,14 @@ a.pager__page:hover {
     justify-self: center;
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
     gap: var(--space-2);
     max-inline-size: 100%;
     padding: var(--space-2);
     border: 1px solid var(--c-line);
-    border-radius: var(--radius-pill-token);
+    /* Not a pill: on a narrow stage the tools wrap, and a pill would not. */
+    border-radius: var(--r-panel);
     background: var(--c-surface);
     box-shadow: var(--shadow-md);
 }
@@ -3910,6 +3995,10 @@ a.pager__page:hover {
     grid-area: panel;
 }
 
+.studio__save {
+    inline-size: 100%;
+}
+
 .studio__pane-title {
     font-size: var(--fs-small);
     font-weight: var(--weight-semibold);
@@ -3940,8 +4029,9 @@ a.pager__page:hover {
     grid-area: stage;
     display: grid;
     justify-items: center;
+    align-items: start;
     min-inline-size: 0;
-    min-block-size: 480px;
+    min-block-size: 320px;
     overflow: auto;
     padding: var(--space-4);
     border-radius: var(--radius-lg);
@@ -4196,6 +4286,11 @@ a.pager__page:hover {
     font-variant-numeric: tabular-nums;
 }
 
+/* On white the swatch needs a dark hairline; the white one is for the gradient. */
+:where(.data-table, .stock-matrix, .settings, .patterns) .swatch {
+    box-shadow: inset 0 0 0 1px rgb(14 14 20 / 0.16);
+}
+
 /* Chips on white: the same pill, light. The dark one belongs to the panel. */
 :where(.settings, .data-table, .patterns) .chip {
     background: var(--c-surface-2);
@@ -4229,4 +4324,151 @@ a.pager__page:hover {
     .settings__card {
         padding: var(--space-4);
     }
+}
+
+/* ------------------------------------------- pattern gallery (_patterns.php) */
+
+.patterns {
+    display: grid;
+    gap: var(--space-7);
+}
+
+.patterns__toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-start: calc(var(--space-5) * -1);
+}
+
+.patterns__toc-link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    padding-inline: var(--space-4);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+    color: var(--c-ink);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+}
+
+.patterns__toc-link:hover {
+    border-color: var(--c-ink-2);
+}
+
+.patterns__section {
+    display: grid;
+    gap: var(--space-4);
+    min-inline-size: 0;
+    scroll-margin-block-start: calc(var(--admin-bar-h) + var(--space-4));
+}
+
+.patterns__title {
+    font-size: var(--fs-card-title);
+    line-height: var(--leading-tight);
+    text-wrap: balance;
+}
+
+.patterns__help {
+    color: var(--c-ink-2);
+    max-inline-size: 70ch;
+    margin-block-start: calc(var(--space-3) * -1);
+}
+
+.patterns__help a {
+    color: var(--c-accent);
+    font-weight: var(--weight-semibold);
+    text-underline-offset: 3px;
+}
+
+.patterns__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.patterns__sep {
+    inline-size: 1px;
+    block-size: var(--space-6);
+    background: var(--c-line);
+}
+
+.patterns__card {
+    padding: var(--space-5);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.patterns__card--dark {
+    border-color: var(--c-night);
+    background: var(--c-night);
+}
+
+.patterns__stats {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+
+.patterns__states {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+/* SKUs and other codes: data, so they get the data face. */
+.code-text {
+    font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+    font-size: var(--fs-caption);
+    white-space: nowrap;
+}
+
+/* The studio's stand-in slide: a dark card with the hero's three lines. */
+.patterns-slide {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+    min-block-size: 360px;
+    align-content: center;
+    padding: var(--space-7);
+    background: var(--c-night);
+    color: var(--c-night-ink);
+}
+
+.patterns-slide[data-align='center'] {
+    justify-items: center;
+    text-align: center;
+}
+
+.patterns-slide__wordmark {
+    font-family: var(--font-display, var(--font-sans));
+    font-size: clamp(48px, 8vw, 96px);
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.patterns-slide__tagline {
+    max-inline-size: 40ch;
+    color: var(--c-night-ink-2);
+}
+
+.patterns-slide__cta {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    padding-inline: var(--space-5);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+    color: var(--c-ink);
+    font-weight: var(--weight-semibold);
+}
+
+.patterns-slide [data-studio-item]:hover {
+    outline-color: var(--c-night-ink-2);
+}
+
+.patterns-slide [data-studio-item].is-selected {
+    outline-color: var(--c-night-ink);
 }

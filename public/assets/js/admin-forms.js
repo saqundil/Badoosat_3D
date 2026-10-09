@@ -93,6 +93,39 @@ window.addEventListener('beforeunload', (event) => {
     }
 });
 
+/* ---------------------------------------------------------- busy on submit */
+
+// The button that sent the form shows it is working, and a second press of
+// any submit button of that form is ignored until the page changes.
+document.addEventListener('submit', (event) => {
+    const form = event.target;
+
+    if (!(form instanceof HTMLFormElement) || event.defaultPrevented) {
+        return;
+    }
+    if (form.dataset.busy) {
+        event.preventDefault();
+        return;
+    }
+    form.dataset.busy = '1';
+    const button = event.submitter;
+    if (button instanceof HTMLElement) {
+        button.classList.add('is-busy');
+        button.setAttribute('aria-busy', 'true');
+    }
+});
+
+// A page restored from the back/forward cache is not still sending.
+window.addEventListener('pageshow', () => {
+    for (const form of document.querySelectorAll('form[data-busy]')) {
+        delete form.dataset.busy;
+    }
+    for (const button of document.querySelectorAll('.is-busy')) {
+        button.classList.remove('is-busy');
+        button.removeAttribute('aria-busy');
+    }
+});
+
 /* ------------------------------------------------------------------ counters */
 
 const counters = document.querySelectorAll('[data-count-for]');
@@ -115,7 +148,18 @@ for (const counter of counters) {
 const summary = document.querySelector('[data-error-summary]');
 
 if (summary) {
-    summary.focus();
+    // After load and a frame: a #fragment in the URL is scrolled to after the
+    // scripts run, and landing on it would otherwise take the focus away again.
+    const take = () => requestAnimationFrame(() => {
+        summary.scrollIntoView({ block: 'center' });
+        summary.focus({ preventScroll: true });
+    });
+    if (document.readyState === 'complete') {
+        take();
+    } else {
+        window.addEventListener('load', take, { once: true });
+    }
+
     summary.addEventListener('click', (event) => {
         const link = event.target instanceof Element ? event.target.closest('a[href^="#"]') : null;
         const target = link && document.getElementById(link.getAttribute('href').slice(1));

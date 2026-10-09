@@ -27,7 +27,7 @@ if (is_dir($logDirectory) || mkdir($logDirectory, 0775, true)) {
  * last week's stylesheet after a deploy. Bump this on release and every asset
  * URL changes with it.
  */
-const ASSETS = '32';
+const ASSETS = '33';
 
 /*
  * THE DOCUMENT'S LANGUAGE AND DIRECTION

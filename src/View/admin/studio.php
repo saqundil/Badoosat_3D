@@ -94,15 +94,11 @@ $firstLang   = array_key_first($languages);
         <button type="button" class="icon-button icon-button--quiet studio__toggle" data-studio-toggle="panel"
                 aria-controls="<?= e($id) ?>-panel" aria-expanded="true" title="<?= e(Lang::get('admin.studio.toggle_panel')) ?>"
                 aria-label="<?= e(Lang::get('admin.studio.toggle_panel')) ?>"><?= admin_icon('panel') ?></button>
-
-        <?php if ($saveForm !== null) { ?>
-            <button type="submit" class="button button--primary" form="<?= e($saveForm) ?>"><?= e(Lang::get('admin.form.save')) ?></button>
-        <?php } ?>
     </div>
 
     <aside class="studio__pane studio__pane--layers" id="<?= e($id) ?>-layers" aria-labelledby="<?= e($id) ?>-layers-title">
         <h2 class="studio__pane-title" id="<?= e($id) ?>-layers-title"><?= e($layersTitle) ?></h2>
-        <div class="studio__layers" data-studio-layers><?php $layers(); ?></div>
+        <div class="studio__layers" role="listbox" aria-labelledby="<?= e($id) ?>-layers-title" data-studio-layers><?php $layers(); ?></div>
     </aside>
 
     <div class="studio__stage" data-studio-stage>
@@ -112,6 +108,11 @@ $firstLang   = array_key_first($languages);
     </div>
 
     <aside class="studio__pane studio__pane--panel" id="<?= e($id) ?>-panel" aria-label="<?= e(Lang::get('admin.studio.properties')) ?>">
+        <?php /* The one primary action sits at the head of the properties, as the
+                 reference puts its main button at the top of the right pane. */ ?>
+        <?php if ($saveForm !== null) { ?>
+            <button type="submit" class="button button--primary studio__save" form="<?= e($saveForm) ?>"><?= e(Lang::get('admin.form.save')) ?></button>
+        <?php } ?>
         <?php if (count($panels) > 1) { ?>
             <div class="segmented studio__tabs" role="tablist" aria-label="<?= e(Lang::get('admin.studio.properties')) ?>">
                 <?php $i = 0;

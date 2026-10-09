@@ -51,7 +51,7 @@ $limit = UploadLimit::bytes();
          data-msg-chosen="<?= e(Lang::get('admin.form.drop_chosen')) ?>"
          style="--drop-ratio: <?= e($ratio) ?>">
         <div class="dropzone__frame">
-            <img class="dropzone__preview" alt="" data-preview<?= $current !== null ? ' src="' . e($current) . '"' : ' hidden' ?>>
+            <img class="dropzone__preview" alt="" width="800" height="600" data-preview<?= $current !== null ? ' src="' . e($current) . '"' : ' hidden' ?>>
             <div class="dropzone__empty"<?= $current !== null ? ' hidden' : '' ?> data-empty>
                 <span class="dropzone__icon"><?= admin_icon('export') ?></span>
                 <span><?= e(Lang::get('admin.form.drop_here')) ?></span>

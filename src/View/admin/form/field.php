@@ -184,7 +184,7 @@ $labelText = e($label) . ($required ? ' <span class="form-field__req" aria-hidde
         // The mark sits where the locale writes it: before the figure or after.
         $parts = Format::moneyParts(0); ?>
         <span class="affix<?= $parts['before'] ? ' affix--before' : '' ?>">
-            <input class="input" type="text" inputmode="decimal" autocomplete="off" dir="ltr" pattern="[0-9]+([.][0-9]{1,2})?"<?= $attr(['value' => (string) $value]) ?>>
+            <input class="input" type="text" inputmode="decimal" autocomplete="off" pattern="[0-9]+([.][0-9]{1,2})?"<?= $attr(['value' => (string) $value]) ?>>
             <span class="affix__text" aria-hidden="true"><?= e($parts['symbol']) ?></span>
         </span>
 
@@ -194,8 +194,11 @@ $labelText = e($label) . ($required ? ' <span class="form-field__req" aria-hidde
             <span class="affix__text" aria-hidden="true"><?= e($unit) ?></span>
         </span>
 
-    <?php } else { ?>
-        <input class="input" type="<?= e($type) ?>"<?= $attr(['value' => (string) $value]) ?>>
+    <?php } else {
+        // Addresses, numbers and links are not words: no spellcheck, no capitals.
+        $literal = in_array($type, ['email', 'tel', 'url'], true)
+            ? ['spellcheck' => 'false', 'autocapitalize' => 'off'] : []; ?>
+        <input class="input" type="<?= e($type) ?>"<?= $attr(['value' => (string) $value] + $literal) ?>>
     <?php } ?>
 <?php } ?>
 
