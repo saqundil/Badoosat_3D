@@ -358,6 +358,9 @@ CREATE TABLE custom_designs (
   source         ENUM('editor','upload') NOT NULL DEFAULT 'editor',
   image_path     VARCHAR(255) NOT NULL,
   original_path  VARCHAR(255) NULL,
+  -- The back's press file when an editor design differs front and back; NULL
+  -- means original_path is the only file, printed wherever placement says.
+  back_original_path VARCHAR(255) NULL,
   mime           VARCHAR(60) NOT NULL,
   width_px       INT UNSIGNED NOT NULL,
   height_px      INT UNSIGNED NOT NULL,
@@ -504,6 +507,9 @@ CREATE TABLE print_files (
   id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   custom_design_id  INT UNSIGNED NULL,
   design_id         INT UNSIGNED NULL,
+  -- 'single' is a design's only file; a design printed differently on each
+  -- side has one 'front' and one 'back' row instead.
+  side              ENUM('single','front','back') NOT NULL DEFAULT 'single',
   order_id          INT UNSIGNED NULL,
   driver            VARCHAR(20) NOT NULL,
   colour_space      VARCHAR(10) NOT NULL,
@@ -511,7 +517,7 @@ CREATE TABLE print_files (
   preview_path      VARCHAR(255) NOT NULL,
   dpi               SMALLINT UNSIGNED NOT NULL,
   created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY print_files_custom (custom_design_id),
+  UNIQUE KEY print_files_custom_side (custom_design_id, side),
   INDEX print_files_order (order_id),
   CONSTRAINT print_files_custom_fk FOREIGN KEY (custom_design_id) REFERENCES custom_designs (id) ON DELETE CASCADE,
   CONSTRAINT print_files_order_fk  FOREIGN KEY (order_id)         REFERENCES orders (id) ON DELETE SET NULL

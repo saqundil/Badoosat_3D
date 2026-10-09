@@ -135,4 +135,8 @@ return [
     'admin.print.preparing'     => 'Print file being prepared',
     'admin.print.download'      => 'Download print file',
     'admin.print.preview'       => 'Preview the print file',
+    'admin.print.download_front' => 'Download front print file',
+    'admin.print.download_back'  => 'Download back print file',
+    'admin.print.preview_front'  => 'Preview the front print file',
+    'admin.print.preview_back'   => 'Preview the back print file',
 ];

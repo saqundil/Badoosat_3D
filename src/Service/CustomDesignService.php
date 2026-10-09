@@ -71,35 +71,39 @@ final class CustomDesignService
     {
         $placement = (string) ($input['placement'] ?? 'front');
 
-        if (!in_array($placement, Garment::SIDES, true)) {
+        if (!in_array($placement, self::PLACEMENTS, true)) {
             throw new ValidationException(['placement' => 'موضع الطباعة غير معروف.']);
         }
 
         $state = $this->decodeState($input['design_json'] ?? null);
         $uploader ??= Uploader::make();
 
-        // The flat press file. It never comes from the 3D scene; the editor
-        // exports it from the design canvas at the configured DPI.
-        $printFile = $files['print_png'] ?? null;
+        /*
+         * The placement has to be the sides the design actually covers.
+         *
+         * The editor used to send whichever side was on screen, so a customer
+         * who designed both sides paid for and received one. Read from the state
+         * rather than trusted: a design with art on both sides is 'both', and
+         * anything else that disagrees is refused rather than half printed.
+         */
+        $designed = $this->designedSides($state);
 
-        if (($printFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            throw new ValidationException(['print_png' => 'ملف الطباعة مفقود.']);
+        if ($designed === []) {
+            throw new ValidationException(['design' => 'التصميم فارغ: ضع صورة أو نصًّا على القطعة.']);
         }
 
-        $expected = $this->garment->exportPx();
-        $size = @getimagesize($printFile['tmp_name']);
-
-        if ($size === false) {
-            throw new ValidationException(['print_png' => 'ملف الطباعة غير قابل للقراءة.']);
+        if ($placement !== (count($designed) === 2 ? 'both' : $designed[0])) {
+            throw new ValidationException(['placement' => 'موضع الطباعة لا يطابق الوجهين المصمَّمين.']);
         }
 
-        // A couple of pixels of rounding is fine; a different size is not the
-        // file this shop prints.
-        if (abs($size[0] - $expected['w']) > 2 || abs($size[1] - $expected['h']) > 2) {
-            throw new ValidationException(['print_png' => sprintf(
-                'مقاس ملف الطباعة %d×%d، والمطلوب %d×%d.',
-                $size[0], $size[1], $expected['w'], $expected['h']
-            )]);
+        // The flat press files. They never come from the 3D scene; the editor
+        // exports each from its side's design canvas at the configured DPI.
+        // print_png is the front -- or the one side printed -- and print_png_back
+        // the back when both sides carry their own art.
+        $size = $this->pressFileSize($files['print_png'] ?? null, 'print_png');
+
+        if ($placement === 'both') {
+            $this->pressFileSize($files['print_png_back'] ?? null, 'print_png_back');
         }
 
         $check = $this->inspectState($state, $files);
@@ -111,7 +115,10 @@ final class CustomDesignService
         $token = bin2hex(random_bytes(16));
 
         try {
-            $press = $this->keepPrivate($printFile, $token . '.png');
+            $press = $this->keepPrivate($files['print_png'], $token . '.png');
+            $pressBack = $placement === 'both'
+                ? $this->keepPrivate($files['print_png_back'], $token . '-back.png')
+                : null;
             $preview = isset($files['preview_png']) && ($files['preview_png']['error'] ?? 1) === UPLOAD_ERR_OK
                 ? $uploader->store($files['preview_png'], 'designs')
                 : null;
@@ -130,6 +137,7 @@ final class CustomDesignService
             'image_path'    => $preview['path'] ?? '/images/hero-poster.webp',
             // What the press gets, kept where no URL reaches it.
             'original_path' => $press,
+            'back_original_path' => $pressBack,
             'mime'          => 'image/png',
             'width_px'      => $size[0],
             'height_px'     => $size[1],
@@ -142,6 +150,50 @@ final class CustomDesignService
         ]);
 
         return ['design_token' => $token, 'design_id' => $designId, 'check' => $check];
+    }
+
+    /**
+     * The sides of an editor state that carry at least one object, front first.
+     *
+     * @return array<int,string>
+     */
+    private function designedSides(array $state): array
+    {
+        return array_values(array_filter(
+            Garment::SIDES,
+            static fn (string $side): bool => ($state['sides'][$side]['objects'] ?? []) !== []
+        ));
+    }
+
+    /**
+     * Checks one flat press file is there and is the size this shop prints.
+     *
+     * @return array{0:int,1:int} its width and height in pixels
+     * @throws ValidationException
+     */
+    private function pressFileSize(?array $file, string $field): array
+    {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            throw new ValidationException([$field => 'ملف الطباعة مفقود.']);
+        }
+
+        $expected = $this->garment->exportPx();
+        $size = @getimagesize($file['tmp_name']);
+
+        if ($size === false) {
+            throw new ValidationException([$field => 'ملف الطباعة غير قابل للقراءة.']);
+        }
+
+        // A couple of pixels of rounding is fine; a different size is not the
+        // file this shop prints.
+        if (abs($size[0] - $expected['w']) > 2 || abs($size[1] - $expected['h']) > 2) {
+            throw new ValidationException([$field => sprintf(
+                'مقاس ملف الطباعة %d×%d، والمطلوب %d×%d.',
+                $size[0], $size[1], $expected['w'], $expected['h']
+            )]);
+        }
+
+        return [(int) $size[0], (int) $size[1]];
     }
 
     /* ------------------------------------------------- the direct upload */

@@ -164,6 +164,7 @@ final class OrderRepository extends Repository
                     cd.token AS custom_token, cd.preview_path AS custom_preview,
                     cd.image_path AS custom_image, cd.source AS custom_source,
                     cd.note AS custom_note, cd.dpi AS custom_dpi,
+                    (cd.back_original_path IS NOT NULL) AS custom_back,
                     d.thumb_path AS design_thumb, d.print_path AS design_print,
                     g.name_ar AS garment_name_ar, g.name_en AS garment_name_en
                FROM order_items oi
@@ -364,8 +365,10 @@ final class OrderRepository extends Repository
     }
 
     /**
-     * Customer artwork on live orders that has no press file yet. Counted per
-     * artwork, not per line: ten lines sharing a design wait for one file.
+     * Customer artwork on live orders that is still missing a press file.
+     * Counted per artwork, not per line: ten lines sharing a design wait for
+     * one file. A design printed differently on each side waits until both of
+     * its sheets exist -- its front alone is not ready.
      */
     public function printFilesPending(): int
     {
@@ -373,11 +376,16 @@ final class OrderRepository extends Repository
             'SELECT COUNT(DISTINCT oi.custom_design_id)
                FROM order_items oi
                JOIN orders o           ON o.id = oi.order_id
-          LEFT JOIN print_files pf     ON pf.custom_design_id = oi.custom_design_id
+               JOIN custom_designs cd  ON cd.id = oi.custom_design_id
               WHERE oi.item_type = \'custom\'
-                AND oi.custom_design_id IS NOT NULL
-                AND pf.id IS NULL
-                AND o.status NOT IN (\'cancelled\', \'refunded\')'
+                AND o.status NOT IN (\'cancelled\', \'refunded\')
+                AND (
+                      NOT EXISTS (SELECT 1 FROM print_files pf
+                                   WHERE pf.custom_design_id = cd.id AND pf.side IN (\'single\', \'front\'))
+                   OR (cd.back_original_path IS NOT NULL
+                       AND NOT EXISTS (SELECT 1 FROM print_files pf
+                                        WHERE pf.custom_design_id = cd.id AND pf.side = \'back\'))
+                )'
         )->fetchColumn();
     }
 

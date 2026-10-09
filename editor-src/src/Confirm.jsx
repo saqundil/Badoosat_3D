@@ -10,29 +10,39 @@ import { useEditor } from './store.js';
  * will look worn, and the flat file shows exactly what goes to the press. A
  * customer who has seen both cannot be surprised by the parcel.
  */
+const SIDE_LABELS = { front: 'الأمام', back: 'الخلف' };
+
 export default function Confirm({ onBack }) {
     const config = useEditor((s) => s.config);
     const surface = useEditor((s) => s.surface);
-    const side = useEditor((s) => s.side);
     const status = useEditor((s) => s.status);
     const error = useEditor((s) => s.error);
     const sceneShot = useEditor((s) => s.sceneShot);
 
-    const [shots, setShots] = useState({ scene: null, print: null });
+    /*
+     * One press file per designed side, front first. The placement is read from
+     * the design, not from the side on screen: a customer who designed the front
+     * and then the back gets both printed.
+     */
+    const [sides] = useState(() => surface.designedSides());
+    const placement = sides.length === 2 ? 'both' : sides[0];
+
+    const [shots, setShots] = useState({ scene: null, prints: null });
 
     useEffect(() => {
         let live = true;
 
-        surface.printDataUrl().then((print) => {
-            if (live) {
-                setShots({ scene: sceneShot, print });
-            }
-        });
+        Promise.all(sides.map((side) => surface.printDataUrl(side).then((url) => ({ side, url }))))
+            .then((prints) => {
+                if (live) {
+                    setShots({ scene: sceneShot, prints });
+                }
+            });
 
         return () => {
             live = false;
         };
-    }, [surface, sceneShot]);
+    }, [surface, sceneShot, sides]);
 
     const submit = async () => {
         const state = useEditor.getState();
@@ -44,11 +54,16 @@ export default function Confirm({ onBack }) {
             body.append('_token', config.csrfToken);
             body.append('action', 'save');
             body.append('product_id', String(config.productId));
-            body.append('placement', side);
+            body.append('placement', placement);
             body.append('quantity', String(state.quantity));
             body.append('variant_id', state.variant()?.id ?? '');
             body.append('design_json', JSON.stringify(surface.toJSON()));
-            body.append('print_png', dataUrlToBlob(shots.print), 'print.png');
+            // The front -- or the one side printed -- then the back when both are.
+            body.append('print_png', dataUrlToBlob(shots.prints[0].url), 'print.png');
+
+            if (shots.prints[1]) {
+                body.append('print_png_back', dataUrlToBlob(shots.prints[1].url), 'print-back.png');
+            }
 
             if (shots.scene) {
                 body.append('preview_png', dataUrlToBlob(shots.scene), 'preview.png');
@@ -85,7 +100,7 @@ export default function Confirm({ onBack }) {
                 product_id: config.productId,
                 color_id: state.color,
                 size_id: state.size,
-                placement: side,
+                placement,
                 quantity: state.quantity,
                 custom_token: result.design_token,
             };
@@ -118,15 +133,17 @@ export default function Confirm({ onBack }) {
                     <figcaption>كما سيبدو على القميص</figcaption>
                 </figure>
 
-                <figure>
-                    <div className="ed-confirm__shot ed-confirm__shot--flat">
-                        {shots.print && <img src={shots.print} alt="ملف الطباعة المسطّح" />}
-                    </div>
-                    <figcaption>
-                        ملف الطباعة — {config.printSizeCm.w}×{config.printSizeCm.h} سم عند{' '}
-                        {config.dpi.target} نقطة/بوصة ({config.exportPx.w}×{config.exportPx.h} بكسل)
-                    </figcaption>
-                </figure>
+                {(shots.prints ?? sides.map((side) => ({ side, url: null }))).map(({ side, url }) => (
+                    <figure key={side}>
+                        <div className="ed-confirm__shot ed-confirm__shot--flat">
+                            {url && <img src={url} alt={'ملف الطباعة المسطّح — ' + SIDE_LABELS[side]} />}
+                        </div>
+                        <figcaption>
+                            ملف الطباعة ({SIDE_LABELS[side]}) — {config.printSizeCm.w}×{config.printSizeCm.h} سم عند{' '}
+                            {config.dpi.target} نقطة/بوصة ({config.exportPx.w}×{config.exportPx.h} بكسل)
+                        </figcaption>
+                    </figure>
+                ))}
             </div>
 
             {config.returnsNotice && <p className="ed-note ed-note--plain">{config.returnsNotice}</p>}
@@ -140,7 +157,7 @@ export default function Confirm({ onBack }) {
                     type="button"
                     className="ed-primary"
                     onClick={submit}
-                    disabled={status === 'saving' || !shots.print}
+                    disabled={status === 'saving' || !shots.prints}
                 >
                     {status === 'saving' ? 'جارٍ الحفظ…' : 'أضف إلى السلة'}
                 </button>

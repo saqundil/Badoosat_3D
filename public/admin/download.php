@@ -21,7 +21,13 @@ Auth::require();
  * no filename in the query string for anyone to bend.
  */
 
-$file = PrintFileRepository::make()->forCustomDesign((int) ($_GET['design'] ?? 0));
+/* A design printed differently front and back has one sheet per side and is
+   asked for with &side=; without it, a design's only (or front) sheet. */
+$designId = (int) ($_GET['design'] ?? 0);
+$side     = (string) ($_GET['side'] ?? '');
+$file     = in_array($side, ['front', 'back'], true)
+    ? PrintFileRepository::make()->forCustomDesignSide($designId, $side)
+    : PrintFileRepository::make()->forCustomDesign($designId);
 
 if ($file === null) {
     Response::error('لا يوجد ملف طباعة لهذا التصميم.', 404);

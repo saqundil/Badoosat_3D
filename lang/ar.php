@@ -349,4 +349,8 @@ return [
     'admin.print.preparing'     => 'ملف الطباعة قيد التجهيز',
     'admin.print.download'      => 'حمّل ملف الطباعة',
     'admin.print.preview'       => 'معاينة ملف الطباعة',
+    'admin.print.download_front' => 'حمّل ملف طباعة الصدر',
+    'admin.print.download_back'  => 'حمّل ملف طباعة الظهر',
+    'admin.print.preview_front'  => 'معاينة ملف طباعة الصدر',
+    'admin.print.preview_back'   => 'معاينة ملف طباعة الظهر',
 ];

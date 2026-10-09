@@ -20,7 +20,7 @@ declare(strict_types=1);
  * order was chosen ($explicit). The desktop default -- the newest order, shown
  * so the card is never empty -- is not a sheet anyone asked to open.
  *
- * @var array<string,mixed> $order     OrderService::find() + 'prints' keyed by custom_design_id
+ * @var array<string,mixed> $order     OrderService::find() + 'prints' keyed by custom_design_id, then side
  * @var bool                $explicit
  * @var string              $closeHref
  */
@@ -86,7 +86,8 @@ $moves  = OrderService::TRANSITIONS[(string) $order['status']] ?? [];
     <ul class="order-detail__items">
         <?php foreach ($order['items'] as $item) {
             $customId = $item['custom_design_id'] === null ? 0 : (int) $item['custom_design_id'];
-            $file     = $order['prints'][$customId] ?? null;
+            // single, or front then back: one download per sheet the press gets.
+            $files    = $order['prints'][$customId] ?? [];
             $art      = $item['custom_preview'] ?: ($item['design_thumb'] ?: null);
             $sides    = match ($item['placement']) {
                 'both'  => ['front', 'back'],
@@ -138,16 +139,22 @@ $moves  = OrderService::TRANSITIONS[(string) $order['status']] ?? [];
                 <div class="tile__print">
                     <?php if ($item['item_type'] !== 'custom') { ?>
                         <p class="tile__status"><?= e(Lang::get('admin.print.not_needed')) ?></p>
-                    <?php } elseif ($file === null) { ?>
+                    <?php } elseif ($files === [] || ($item['custom_back'] && count($files) < 2)) { ?>
                         <p class="tile__status"><?= admin_icon('clock') ?><?= e(Lang::get('admin.print.preparing')) ?></p>
                     <?php } else { ?>
-                        <a class="button button--on-accent" href="/admin/download.php?design=<?= $customId ?>&amp;type=pdf">
-                            <?= admin_icon('download') ?><?= e(Lang::get('admin.print.download')) ?>
-                        </a>
-                        <a class="icon-button icon-button--on-accent" href="/admin/download.php?design=<?= $customId ?>&amp;type=preview"
-                           aria-label="<?= e(Lang::get('admin.print.preview')) ?>" title="<?= e(Lang::get('admin.print.preview')) ?>">
-                            <?= admin_icon('eye') ?>
-                        </a>
+                        <?php foreach ($files as $side => $file) {
+                            $suffix = $side === 'single' ? '' : '_' . $side;
+                            $query  = 'design=' . $customId . ($side === 'single' ? '' : '&amp;side=' . $side);
+                            ?>
+                            <a class="button button--on-accent" href="/admin/download.php?<?= $query ?>&amp;type=pdf">
+                                <?= admin_icon('download') ?><?= e(Lang::get('admin.print.download' . $suffix)) ?>
+                            </a>
+                            <a class="icon-button icon-button--on-accent" href="/admin/download.php?<?= $query ?>&amp;type=preview"
+                               aria-label="<?= e(Lang::get('admin.print.preview' . $suffix)) ?>" title="<?= e(Lang::get('admin.print.preview' . $suffix)) ?>">
+                                <?= admin_icon('eye') ?>
+                            </a>
+                        <?php } ?>
+                        <?php $file = reset($files); ?>
                         <p class="tile__meta"><bdi dir="ltr"><?= e($file['driver']) ?> · <?= e($file['colour_space']) ?> · <?= e(Format::number((int) $file['dpi'])) ?> DPI</bdi></p>
                     <?php } ?>
                 </div>

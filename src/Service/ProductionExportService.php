@@ -54,8 +54,10 @@ final class ProductionExportService
 
         $files = [];
 
+        // Per design, then per side: a design printed differently front and
+        // back has two sheets, everything else one ('single').
         foreach ($this->printFiles->forOrders($orderIds) as $file) {
-            $files[(int) $file['custom_design_id']] = $file;
+            $files[(int) $file['custom_design_id']][(string) $file['side']] = $file;
         }
 
         $directory = Config::get('app.paths.storage') . '/exports';
@@ -82,17 +84,17 @@ final class ProductionExportService
             foreach ($order['items'] as $item) {
                 $pieces  += (int) $item['quantity'];
                 $customId = $item['custom_design_id'] === null ? 0 : (int) $item['custom_design_id'];
-                $file     = $files[$customId] ?? null;
-                $inZip    = '';
+                $inZip    = [];
 
-                if ($file !== null) {
-                    $inZip  = 'print/design-' . $customId . '.pdf';
+                foreach ($files[$customId] ?? [] as $side => $file) {
+                    $name   = 'print/design-' . $customId . ($side === 'single' ? '' : '-' . $side) . '.pdf';
                     $source = $root . '/' . ltrim((string) $file['pdf_path'], '/');
+                    $inZip[] = $name;
 
-                    // Once per design, not once per line.
-                    if (!isset($added[$inZip]) && is_file($source)) {
-                        $zip->addFile($source, $inZip);
-                        $added[$inZip] = true;
+                    // Once per design and side, not once per line.
+                    if (!isset($added[$name]) && is_file($source)) {
+                        $zip->addFile($source, $name);
+                        $added[$name] = true;
                     }
                 }
 
@@ -105,7 +107,7 @@ final class ProductionExportService
                     (string) $item['quantity'],
                     self::placement((string) $item['placement']),
                     self::printing($item),
-                    $inZip,
+                    implode(' + ', $inZip),
                 ];
             }
         }

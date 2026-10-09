@@ -84,10 +84,12 @@ try {
     if ($selected !== null) {
         // Keyed on the artwork, because that is what a press file belongs to: ten
         // lines sharing one design share one file and must show one download.
+        // Then on the side: a design printed differently front and back has a
+        // sheet for each, and the line offers both.
         $selected['prints'] = [];
 
         foreach (PrintFileRepository::make()->forOrder((int) $selected['id']) as $file) {
-            $selected['prints'][(int) $file['custom_design_id']] = $file;
+            $selected['prints'][(int) $file['custom_design_id']][(string) $file['side']] = $file;
         }
     }
 } catch (Throwable $e) {

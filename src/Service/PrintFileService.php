@@ -174,30 +174,61 @@ final class PrintFileService
      * sends one sheet to the press; producing it five times would give the
      * operator five identical PDFs and five chances to pick the wrong one.
      *
+     * One sheet per printed side. A design whose front and back differ carries
+     * a second press file, and gets a 'front' and a 'back' sheet; everything
+     * else -- one side, or an upload placed on both -- is one 'single' sheet,
+     * exactly as before.
+     *
      * Runs from the queue, so it may take its time.
      *
-     * @return array<string,mixed> the print_files row
+     * @return array<int,array<string,mixed>> the print_files rows, single or front then back
      */
     public function produce(int $customDesignId, ?int $orderId = null): array
     {
-        $existing = $this->printFiles->forCustomDesign($customDesignId);
-
-        // The queue is at-least-once by design: a job that timed out halfway is
-        // retried, and re-rendering a sheet that already exists would only
-        // burn minutes and orphan the file the admin screen already links to.
-        if ($existing !== null) {
-            return $existing;
-        }
-
         $design = $this->designs->find($customDesignId);
 
         if ($design === null) {
             throw new RuntimeException('Custom design ' . $customDesignId . ' is missing.');
         }
 
-        $source = $this->sourcePath($design);
-        $stem   = $this->stem($customDesignId);
-        $dir    = $this->directory($orderId);
+        $rows = [];
+
+        $sides = empty($design['back_original_path']) ? ['single'] : ['front', 'back'];
+
+        foreach ($sides as $side) {
+            // The queue is at-least-once by design: a job that timed out halfway
+            // is retried, and re-rendering a sheet that already exists would only
+            // burn minutes and orphan the file the admin screen already links to.
+            // Checked per side, so a retry after the front finished does the back,
+            // and before the source is looked for, so a finished sheet is returned
+            // even when its source has since been cleaned away.
+            $rows[] = $this->printFiles->forCustomDesignSide($customDesignId, $side)
+                ?? $this->produceSide($design, $side, $this->sideSource($design, $side), $orderId);
+        }
+
+        return $rows;
+    }
+
+    /** The file a side's sheet is made from. */
+    private function sideSource(array $design, string $side): string
+    {
+        if ($side !== 'back') {
+            return $this->sourcePath($design);
+        }
+
+        if (!is_file((string) $design['back_original_path'])) {
+            throw new RuntimeException('Back press file is missing for design ' . $design['id'] . '.');
+        }
+
+        return (string) $design['back_original_path'];
+    }
+
+    /** @return array<string,mixed> the print_files row written */
+    private function produceSide(array $design, string $side, string $source, ?int $orderId): array
+    {
+        $customDesignId = (int) $design['id'];
+        $stem = $this->stem($customDesignId) . ($side === 'single' ? '' : '-' . $side);
+        $dir  = $this->directory($orderId);
 
         $printSize = Config::get('garments.tshirt.print_size_cm');
         $bleed     = (float) Config::get('print.bleed_mm', 3);
@@ -216,6 +247,7 @@ final class PrintFileService
         $row = [
             'custom_design_id' => $customDesignId,
             'design_id'        => null,
+            'side'             => $side,
             'order_id'         => $orderId,
             'driver'           => $this->driverName(),
             'colour_space'     => $this->driver->convertsColour() ? 'CMYK' : 'RGB',

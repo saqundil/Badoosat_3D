@@ -20,15 +20,16 @@ final class CustomDesignRepository extends Repository
     {
         $stmt = $this->pdo()->prepare(
             'INSERT INTO custom_designs
-                (token, source, image_path, original_path, mime, width_px, height_px, dpi, quality,
-                 placement, design_json, preview_path, source_path, note)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                (token, source, image_path, original_path, back_original_path, mime, width_px,
+                 height_px, dpi, quality, placement, design_json, preview_path, source_path, note)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $values['token'],
             $values['source'] ?? 'editor',
             $values['image_path'],
             $values['original_path'] ?? null,
+            $values['back_original_path'] ?? null,
             $values['mime'],
             $values['width_px'],
             $values['height_px'],

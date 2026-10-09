@@ -1,4 +1,4 @@
-import { Canvas, FabricImage, Rect, Textbox } from 'fabric';
+import { Canvas, FabricImage, Rect, StaticCanvas, Textbox } from 'fabric';
 
 import { dpiVerdict, effectiveDpi } from './config.js';
 
@@ -392,19 +392,58 @@ export class DesignSurface {
     }
 
     /**
-     * The press file: the print area alone, at the configured DPI.
+     * The sides that carry at least one object, in the garment's order.
+     *
+     * This is what gets printed, so it is what the order's placement says: both
+     * sides when both are designed, not whichever one happens to be on screen.
+     */
+    designedSides() {
+        const current = this.canvas ? this.canvas.toObject(KEEP) : null;
+
+        return this.config.sides.filter((side) => {
+            const state = side === this.side && current ? current : this.saved[side];
+
+            return (state?.objects?.length ?? 0) > 0;
+        });
+    }
+
+    /**
+     * The press file for one side: the print area alone, at the configured DPI.
      *
      * Never the 3D view. What the press receives is the flat artwork at its true
-     * physical size; the scene is a preview and nothing else.
+     * physical size; the scene is a preview and nothing else. The side on screen
+     * is read from the working canvas; the other one is drawn from its saved
+     * state on a canvas nobody sees, so asking for it does not flip the editor.
      */
-    async printDataUrl() {
-        const { exportPx } = this.config;
+    async printDataUrl(side = this.side) {
+        const { exportPx, work } = this.config;
+        let source = this.canvas;
 
-        const raw = this.canvas.toDataURL({
+        if (side !== this.side) {
+            source = new StaticCanvas(undefined, {
+                width: work.w,
+                height: work.h,
+                backgroundColor: 'rgba(0,0,0,0)',
+            });
+            source.clipPath = new Rect({
+                left: 0,
+                top: 0,
+                width: work.w,
+                height: work.h,
+                absolutePositioned: true,
+            });
+            await source.loadFromJSON(this.saved[side] ?? { objects: [] });
+        }
+
+        const raw = source.toDataURL({
             format: 'png',
             multiplier: this.config.exportMultiplier,
             enableRetinaScaling: false,
         });
+
+        if (source !== this.canvas) {
+            source.dispose();
+        }
 
         // Fabric's multiplier cannot land on both target dimensions at once, so
         // the result is redrawn at exactly the size the press expects. "28 x 35 cm
