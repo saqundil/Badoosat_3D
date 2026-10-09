@@ -82,5 +82,6 @@ $toast     = $toast ?? null;
          tags rather than imports, so every one carries the ?v= cache-buster. */ ?>
 <script type="module" src="/assets/js/admin-ui.js?v=<?= e(ASSETS) ?>"></script>
 <script type="module" src="/assets/js/admin-forms.js?v=<?= e(ASSETS) ?>"></script>
+<script type="module" src="/assets/js/admin-table.js?v=<?= e(ASSETS) ?>"></script>
 </body>
 </html>
