@@ -68,6 +68,7 @@ export default function App({ onClose }) {
 
     const canvasRef = useRef(null);
     const fileRef = useRef(null);
+    const leaveRef = useRef(null);
     const narrow = useIsNarrow();
     const [tab, setTab] = useState('design');
     const [busy, setBusy] = useState(false);
@@ -101,10 +102,37 @@ export default function App({ onClose }) {
         };
     }, [surface, sync]);
 
+    /* ------------------------------------------------------------ leaving */
+
+    /*
+     * Nothing is saved until the review step posts it, so closing a design that
+     * has anything on it -- either side -- throws that work away. An empty
+     * editor closes at once; otherwise the customer is asked first.
+     */
+    const requestClose = useCallback(() => {
+        if (!surface || surface.isEmpty()) {
+            onClose?.();
+            return;
+        }
+
+        leaveRef.current?.showModal();
+    }, [surface, onClose]);
+
+    const leave = () => {
+        leaveRef.current?.close();
+        onClose?.();
+    };
+
     /* ------------------------------------------------------- the keyboard */
 
     useEffect(() => {
         const onKey = (event) => {
+            // While the leave dialog is up, its own Esc handling keeps the
+            // customer in the editor, and no shortcut may reach the canvas.
+            if (leaveRef.current?.open) {
+                return;
+            }
+
             const key = event.key.toLowerCase();
 
             if ((event.ctrlKey || event.metaKey) && key === 'z') {
@@ -122,14 +150,15 @@ export default function App({ onClose }) {
             }
 
             if (key === 'escape') {
-                onClose?.();
+                event.preventDefault();
+                requestClose();
             }
         };
 
         window.addEventListener('keydown', onKey);
 
         return () => window.removeEventListener('keydown', onKey);
-    }, [surface, sync, onClose]);
+    }, [surface, sync, requestClose]);
 
     /* ---------------------------------------------------------- uploading */
 
@@ -247,7 +276,7 @@ export default function App({ onClose }) {
                     ))}
                 </div>
 
-                <button type="button" className="ed-close" onClick={onClose} aria-label="إغلاق المحرّر">
+                <button type="button" className="ed-close" onClick={requestClose} aria-label="إغلاق المحرّر">
                     ✕
                 </button>
             </header>
@@ -356,6 +385,27 @@ export default function App({ onClose }) {
                 onChange={onFile}
                 hidden
             />
+
+            {/* The safe choice comes first, so showModal() focuses it. */}
+            <dialog
+                ref={leaveRef}
+                className="ed-dialog"
+                aria-labelledby="ed-leave-title"
+                aria-describedby="ed-leave-text"
+            >
+                <h2 id="ed-leave-title">إغلاق المحرّر؟</h2>
+                <p id="ed-leave-text">
+                    تصميمك غير محفوظ بعد، وسيُحذف عند الإغلاق. لا يمكن استرجاعه.
+                </p>
+                <div className="ed-dialog__buttons">
+                    <button type="button" className="ed-tool" onClick={() => leaveRef.current?.close()}>
+                        متابعة التصميم
+                    </button>
+                    <button type="button" className="ed-tool ed-tool--danger" onClick={leave}>
+                        إغلاق وحذف التصميم
+                    </button>
+                </div>
+            </dialog>
         </div>
     );
 }

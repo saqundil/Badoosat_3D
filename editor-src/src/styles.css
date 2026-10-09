@@ -567,6 +567,46 @@ html.ed-locked body {
     flex-wrap: wrap;
 }
 
+/* ---------------------------------------------------------- leave dialog */
+
+/* margin is restated: the site's reset zeroes the UA's centring auto. */
+#tshirt-editor .ed-dialog {
+    margin: auto;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 22px;
+    border: 1px solid #ded9d0;
+    border-radius: 18px;
+    background: #fff;
+    color: #14140f;
+    font: inherit;
+    box-shadow: 0 18px 48px rgba(20, 20, 15, 0.22);
+}
+
+#tshirt-editor .ed-dialog::backdrop {
+    background: rgba(20, 20, 15, 0.45);
+}
+
+#tshirt-editor .ed-dialog h2 {
+    margin: 0 0 8px;
+    font-size: 17px;
+}
+
+#tshirt-editor .ed-dialog p {
+    margin: 0 0 18px;
+    color: #4d4a44;
+}
+
+#tshirt-editor .ed-dialog__buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+#tshirt-editor .ed-dialog__buttons .ed-tool {
+    min-height: 44px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     #tshirt-editor * {
         transition: none !important;
