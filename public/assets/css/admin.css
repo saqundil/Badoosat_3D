@@ -1837,7 +1837,7 @@ legend {
     outline: none;
 }
 
-.order-detail a {
+.order-detail a:not(.button) {
     color: inherit;
 }
 
