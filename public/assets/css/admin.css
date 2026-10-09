@@ -3956,3 +3956,155 @@ a.pager__page:hover {
         min-block-size: 320px;
     }
 }
+
+/* ---------------------------------------------------- settings layout */
+
+/* Template E: the index stays in view, the sections are grouped cards.
+   Fields inside a card are never boxed again -- one card per section. */
+.settings {
+    --settings-index: 240px;
+
+    display: grid;
+    grid-template-columns: var(--settings-index) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+}
+
+.settings__index {
+    position: sticky;
+    inset-block-start: calc(var(--admin-bar-h) + var(--space-4));
+}
+
+.settings__index-list {
+    display: grid;
+    gap: var(--space-1);
+    list-style: none;
+}
+
+.settings__index-link {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-pill-token);
+    color: var(--c-ink-2);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.settings__index-link:hover {
+    color: var(--c-ink);
+    background: var(--c-surface);
+}
+
+.settings__index-link[aria-current='true'] {
+    background: var(--c-surface);
+    color: var(--c-accent);
+    box-shadow: var(--shadow-sm);
+}
+
+.settings__sections {
+    display: grid;
+    gap: var(--space-4);
+    min-inline-size: 0;
+}
+
+.settings__card {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+    scroll-margin-block-start: calc(var(--admin-bar-h) + var(--space-4));
+}
+
+.settings__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.settings__title {
+    font-size: var(--fs-card-title);
+    line-height: var(--leading-tight);
+}
+
+.settings__help {
+    color: var(--c-ink-2);
+    max-inline-size: 65ch;
+    margin-block-start: calc(var(--space-3) * -1);
+}
+
+.settings__body {
+    display: grid;
+    gap: var(--space-5);
+    min-inline-size: 0;
+}
+
+/* Read-only facts inside a card: term and value on one line, wrapping. */
+.facts-list {
+    display: grid;
+    gap: 0;
+}
+
+.facts-list > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+    padding-block: var(--space-3);
+    border-block-end: 1px solid var(--c-line);
+}
+
+.facts-list > div:last-child {
+    border-block-end: 0;
+}
+
+.facts-list dt {
+    color: var(--c-ink-2);
+}
+
+.facts-list dd {
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Chips on white: the same pill, light. The dark one belongs to the panel. */
+:where(.settings, .data-table, .patterns) .chip {
+    background: var(--c-surface-2);
+    color: var(--c-ink);
+}
+
+@media (max-width: 1023px) {
+    .settings {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* The index turns into a row of pills that scrolls inside itself. */
+    .settings__index {
+        position: static;
+        overflow-x: auto;
+    }
+
+    .settings__index-list {
+        display: flex;
+        gap: var(--space-2);
+        inline-size: max-content;
+    }
+
+    .settings__index-link {
+        background: var(--c-surface);
+        border: 1px solid var(--c-line);
+    }
+}
+
+@media (max-width: 767px) {
+    .settings__card {
+        padding: var(--space-4);
+    }
+}
