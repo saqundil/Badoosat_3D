@@ -85,7 +85,7 @@ final class Image
         $source = $public . $path;
 
         if (!is_file($source)) {
-            throw new UploadException('تعذّر العثور على الصورة المرفوعة لمعالجتها.');
+            throw new UploadException(Lang::get('upload.image_missing'));
         }
 
         if (extension_loaded('gd') && function_exists('imagewebp')) {
@@ -96,7 +96,7 @@ final class Image
             return self::generateWithImagick($source, $path);
         }
 
-        throw new UploadException('معالجة صور المنتجات تتطلب امتداد GD أو Imagick على الخادم.');
+        throw new UploadException(Lang::get('upload.no_library'));
     }
 
     /** @return array<int|string,string> */
@@ -106,7 +106,7 @@ final class Image
         $image = $raw === false ? false : @imagecreatefromstring($raw);
 
         if ($image === false) {
-            throw new UploadException('تعذّر فتح الصورة عبر GD. استخدم JPEG أو PNG أو WebP صالحًا.');
+            throw new UploadException(Lang::get('upload.gd_open'));
         }
 
         $generated = [];
@@ -137,7 +137,7 @@ final class Image
 
         if (!imagewebp($output, $target, 84)) {
             imagedestroy($output);
-            throw new UploadException('تعذّر إنشاء نسخة WebP للصورة.');
+            throw new UploadException(Lang::get('upload.webp_failed'));
         }
 
         imagedestroy($output);
@@ -161,7 +161,7 @@ final class Image
                 $url = $width === self::THUMB_WIDTH ? self::thumbnail($path) : self::variant($path, $width);
 
                 if (!$copy->writeImage((string) Config::get('app.paths.public') . $url)) {
-                    throw new UploadException('تعذّر إنشاء نسخة WebP للصورة.');
+                    throw new UploadException(Lang::get('upload.webp_failed'));
                 }
 
                 $copy->clear();
@@ -172,7 +172,7 @@ final class Image
 
             return $generated;
         } catch (\Throwable $error) {
-            throw new UploadException('تعذّر فتح الصورة عبر Imagick: ' . $error->getMessage());
+            throw new UploadException(Lang::get('upload.imagick_open', ['error' => $error->getMessage()]));
         }
     }
 }

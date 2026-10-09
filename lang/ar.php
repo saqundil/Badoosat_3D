@@ -676,4 +676,21 @@ return [
     'admin.products.empty_hint'          => 'المنتج يُبنى على نوع قطعة: اختر النوع والألوان والسعر.',
     'admin.products.empty_search'        => 'لا منتجات تطابق «:q».',
     'admin.products.deleted'             => 'حُذف المنتج.',
+
+    // Upload messages (Uploader, Image, UploadLimit)
+    'upload.limit'                            => 'الحد الفعلي للرفع :mb ميغابايت.',
+    'upload.not_image'                        => 'هذا الملف ليس صورة قابلة للقراءة.',
+    'upload.unreadable'                       => 'تعذّر قراءة الملف.',
+    'upload.no_file'                          => 'لم يصل أي ملف.',
+    'upload.partial'                          => 'لم يكتمل الرفع.',
+    'upload.failed'                           => 'فشل الرفع.',
+    'upload.no_finfo'                         => 'تعذّر فحص نوع الملف على الخادم.',
+    'upload.types'                            => 'الأنواع المقبولة: JPEG و PNG و WebP و SVG فقط.',
+    'upload.store_failed'                     => 'تعذّر تخزين الملف.',
+    'upload.not_writable'                     => 'مجلد الرفع غير قابل للكتابة.',
+    'upload.image_missing'                    => 'تعذّر العثور على الصورة المرفوعة لمعالجتها.',
+    'upload.no_library'                       => 'معالجة صور المنتجات تتطلب امتداد GD أو Imagick على الخادم.',
+    'upload.gd_open'                          => 'تعذّر فتح الصورة عبر GD. استخدم JPEG أو PNG أو WebP صالحًا.',
+    'upload.webp_failed'                      => 'تعذّر إنشاء نسخة WebP للصورة.',
+    'upload.imagick_open'                     => 'تعذّر فتح الصورة عبر Imagick: :error',
 ];

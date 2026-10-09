@@ -30,7 +30,7 @@ final class UploadLimit
 
     public static function message(): string
     {
-        return 'الحد الفعلي للرفع ' . self::mebibytes(self::bytes()) . ' ميغابايت.';
+        return Lang::get('upload.limit', ['mb' => self::mebibytes(self::bytes())]);
     }
 
     public static function postBodyExceeded(): bool

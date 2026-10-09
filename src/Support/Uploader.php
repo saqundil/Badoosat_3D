@@ -50,7 +50,7 @@ final class Uploader
         $size = @getimagesize($temp);
 
         if ($size === false || $size[0] < 1 || $size[1] < 1) {
-            throw new UploadException('هذا الملف ليس صورة قابلة للقراءة.');
+            throw new UploadException(Lang::get('upload.not_image'));
         }
 
         $name = $this->name($this->mimeTypes[$mime]);
@@ -71,7 +71,7 @@ final class Uploader
         $raw = file_get_contents($temp);
 
         if ($raw === false) {
-            throw new UploadException('تعذّر قراءة الملف.');
+            throw new UploadException(Lang::get('upload.unreadable'));
         }
 
         $clean = SvgSanitizer::clean($raw);
@@ -108,16 +108,16 @@ final class Uploader
         if ($error !== UPLOAD_ERR_OK) {
             throw new UploadException(match ($error) {
                 UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => UploadLimit::message(),
-                UPLOAD_ERR_NO_FILE                        => 'لم يصل أي ملف.',
-                UPLOAD_ERR_PARTIAL                        => 'لم يكتمل الرفع.',
-                default                                   => 'فشل الرفع.',
+                UPLOAD_ERR_NO_FILE                        => Lang::get('upload.no_file'),
+                UPLOAD_ERR_PARTIAL                        => Lang::get('upload.partial'),
+                default                                   => Lang::get('upload.failed'),
             });
         }
 
         $temp = (string) ($file['tmp_name'] ?? '');
 
         if ($temp === '' || !is_uploaded_file($temp)) {
-            throw new UploadException('فشل الرفع.');
+            throw new UploadException(Lang::get('upload.failed'));
         }
 
         if (filesize($temp) > $this->maxBytes) {
@@ -132,7 +132,7 @@ final class Uploader
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
         if ($finfo === false) {
-            throw new UploadException('تعذّر فحص نوع الملف على الخادم.');
+            throw new UploadException(Lang::get('upload.no_finfo'));
         }
 
         $mime = finfo_file($finfo, $temp);
@@ -145,7 +145,7 @@ final class Uploader
         }
 
         if (!is_string($mime) || !isset($this->mimeTypes[$mime])) {
-            throw new UploadException('الأنواع المقبولة: JPEG و PNG و WebP و SVG فقط.');
+            throw new UploadException(Lang::get('upload.types'));
         }
 
         return $mime;
@@ -159,7 +159,7 @@ final class Uploader
         $moved = $uploaded ? move_uploaded_file($temp, $target) : rename($temp, $target);
 
         if (!$moved) {
-            throw new UploadException('تعذّر تخزين الملف.');
+            throw new UploadException(Lang::get('upload.store_failed'));
         }
 
         chmod($target, 0644);
@@ -168,7 +168,7 @@ final class Uploader
     private function ensure(string $directory): void
     {
         if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            throw new UploadException('مجلد الرفع غير قابل للكتابة.');
+            throw new UploadException(Lang::get('upload.not_writable'));
         }
     }
 

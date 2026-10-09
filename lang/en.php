@@ -462,4 +462,21 @@ return [
     'admin.products.empty_hint'          => 'A product is built on a garment type: choose the type, colours and price.',
     'admin.products.empty_search'        => 'No products match “:q”.',
     'admin.products.deleted'             => 'Product deleted.',
+
+    // Upload messages (Uploader, Image, UploadLimit)
+    'upload.limit'                            => 'The upload limit is :mb MB.',
+    'upload.not_image'                        => 'This file is not a readable image.',
+    'upload.unreadable'                       => 'The file could not be read.',
+    'upload.no_file'                          => 'No file arrived.',
+    'upload.partial'                          => 'The upload did not finish.',
+    'upload.failed'                           => 'The upload failed.',
+    'upload.no_finfo'                         => 'The server could not check the file type.',
+    'upload.types'                            => 'Accepted types: JPEG, PNG, WebP and SVG only.',
+    'upload.store_failed'                     => 'The file could not be stored.',
+    'upload.not_writable'                     => 'The upload folder is not writable.',
+    'upload.image_missing'                    => 'The uploaded image could not be found for processing.',
+    'upload.no_library'                       => 'Processing product images needs the GD or Imagick extension on the server.',
+    'upload.gd_open'                          => 'GD could not open the image. Use a valid JPEG, PNG or WebP.',
+    'upload.webp_failed'                      => 'The WebP copy of the image could not be made.',
+    'upload.imagick_open'                     => 'Imagick could not open the image: :error',
 ];
