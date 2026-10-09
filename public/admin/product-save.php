@@ -28,9 +28,7 @@ if (UploadLimit::postBodyExceeded()) {
      * the session is the only thing that survives the discarded body.
      */
     Csrf::session();
-    $_SESSION['errors'] = ['product_images' =>
-        'حجم الطلب أكبر من المسموح. ' . UploadLimit::message()
-        . ' جرّب صورة أصغر أو ارفعها على دفعات.'];
+    $_SESSION['errors'] = ['product_images' => Lang::get('admin.product.err.post_too_big', ['limit' => UploadLimit::message()])];
     Response::redirect('/admin/product-edit.php');
 }
 
@@ -62,9 +60,7 @@ if ($action === 'delete') {
 if ($action === 'deactivate' || $action === 'activate') {
     $service->setActive($id, $action === 'activate');
     Csrf::session();
-    $_SESSION['notice'] = $action === 'activate'
-        ? 'أُعيد تفعيل المنتج وظهر في المتجر.'
-        : 'عُطّل المنتج: لم يعد يظهر في المتجر، وسجلّ الطلبات لم يتغيّر.';
+    $_SESSION['notice'] = Lang::get($action === 'activate' ? 'admin.product.activated' : 'admin.product.deactivated');
     Response::redirect('/admin/product-edit.php?id=' . $id);
 }
 
@@ -82,5 +78,5 @@ try {
 }
 
 Csrf::session();
-$_SESSION['notice'] = 'حُفظ المنتج.';
+$_SESSION['notice'] = Lang::get('admin.product.saved');
 Response::redirect('/admin/product-edit.php?id=' . $id);

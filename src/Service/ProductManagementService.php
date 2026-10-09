@@ -11,6 +11,7 @@ use App\Support\Config;
 use App\Support\Db;
 use App\Support\GarmentModels;
 use App\Support\Image;
+use App\Support\Lang;
 use App\Support\Price;
 use App\Support\UploadException;
 use App\Support\Uploader;
@@ -248,7 +249,7 @@ final class ProductManagementService
 
         $primaryImageId = max(0, (int) ($input['primary_image_id'] ?? 0));
         if ($primaryImageId > 0 && !$this->imageBelongsTo($primaryImageId, $id)) {
-            throw new ValidationException(['primary_image_id' => 'الصورة الأساسية لا تتبع هذا المنتج.']);
+            throw new ValidationException(['primary_image_id' => Lang::get('admin.product.err.primary_foreign')]);
         }
 
         $stored = [];
@@ -332,7 +333,7 @@ final class ProductManagementService
             $newImageIds = $this->insertImages($id, $stored);
 
             if ($deleteAfterCommit !== [] && $this->firstImageId($id) < 1) {
-                throw new ValidationException(['product_images' => 'لا يمكن حذف الصورة الوحيدة للمنتج. ارفع بديلًا أولًا.']);
+                throw new ValidationException(['product_images' => Lang::get('admin.product.err.last_image')]);
             }
 
             if ($primaryImageId < 1 || in_array($primaryImageId, array_map('intval', array_keys((array) ($input['delete_image'] ?? []))), true)) {
@@ -445,9 +446,7 @@ final class ProductManagementService
         $lines = $this->orderLineCount($id);
 
         if ($lines > 0) {
-            throw new ValidationException(['delete' =>
-                'لا يمكن حذف هذا المنتج: يظهر في ' . $lines . ' سطر طلب. '
-                . 'عطّله بدلًا من ذلك ليختفي من المتجر ويبقى سجلّ الطلبات سليمًا.']);
+            throw new ValidationException(['delete' => Lang::get('admin.product.err.delete_has_orders', ['lines' => $lines])]);
         }
 
         $paths = array_column($this->images($id), 'path');
@@ -533,9 +532,11 @@ final class ProductManagementService
     /** @return array<string,string> */
     private function validate(array $input, int $id): array
     {
+        $label = static fn (string $field): string => Lang::get('admin.product.f.' . $field);
+
         $validator = new Validator($input);
-        $validator->required('name', 'الاسم')->maxLength('name', 160, 'الاسم');
-        $validator->required('slug', 'المُعرّف')->maxLength('slug', 120, 'المُعرّف');
+        $validator->required('name', $label('name'))->maxLength('name', 160, $label('name'));
+        $validator->required('slug', $label('slug'))->maxLength('slug', 120, $label('slug'));
         /*
          * The type is a row, not a config key. It decides the model, the
          * colours and the sizes, so a product pointing at one that does not
@@ -545,9 +546,9 @@ final class ProductManagementService
         $type = $garmentId > 0 ? $this->garmentTypes->find($garmentId) : null;
 
         if ($type === null) {
-            $validator->fail('garment_id', 'اختر نوع القطعة.');
+            $validator->fail('garment_id', Lang::get('admin.product.err.type_missing'));
         } elseif ((int) $type['is_active'] !== 1) {
-            $validator->fail('garment_id', 'هذا النوع معطَّل. فعّله أو اختر نوعًا آخر.');
+            $validator->fail('garment_id', Lang::get('admin.product.err.type_inactive'));
         }
         /*
          * A floor of one piastre, not zero. A product saved at zero reaches the
@@ -555,23 +556,23 @@ final class ProductManagementService
          * and the storefront now refuses to quote or sell it at all, so saving
          * one would be publishing a product nobody can buy.
          */
-        $validator->decimal('base_price', Price::MIN, Price::MAX, 'السعر الأساسي');
+        $validator->decimal('base_price', Price::MIN, Price::MAX, $label('base_price'));
 
         /* Where the artwork sits on the garment, as a percentage of the print
            area, and how big. The same ranges the live preview allows. */
-        $validator->integer('artwork_x', 0, 100, 'موضع العمل الفني الأفقي');
-        $validator->integer('artwork_y', 0, 100, 'موضع العمل الفني العمودي');
-        $validator->integer('artwork_scale', 10, 150, 'حجم العمل الفني');
-        $validator->in('artwork_side', ['front', 'back'], 'وجه الطباعة');
+        $validator->integer('artwork_x', 0, 100, $label('artwork_x'));
+        $validator->integer('artwork_y', 0, 100, $label('artwork_y'));
+        $validator->integer('artwork_scale', 10, 150, $label('artwork_scale'));
+        $validator->in('artwork_side', ['front', 'back'], $label('artwork_side'));
 
         $this->validateOptions($input, $validator, $type);
 
         $slug = $validator->string('slug');
 
         if ($slug !== '' && !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
-            $validator->fail('slug', 'المُعرّف يقبل أحرفًا إنجليزية صغيرة وأرقامًا وشرطات فقط.');
+            $validator->fail('slug', Lang::get('admin.product.err.slug_format'));
         } elseif ($slug !== '' && $this->products->slugExists($slug, $id)) {
-            $validator->fail('slug', 'المُعرّف مستخدم لمنتج آخر.');
+            $validator->fail('slug', Lang::get('admin.product.err.slug_taken'));
         }
 
         return $validator->errors();
@@ -606,8 +607,7 @@ final class ProductManagementService
         $unknownColors = array_diff($colorIds, $knownColors);
 
         if ($unknownColors !== []) {
-            $validator->fail('colors',
-                'لون غير معروف: ' . implode('، ', $unknownColors) . '. اختر من قائمة الألوان.');
+            $validator->fail('colors', Lang::get('admin.product.err.colour_unknown', ['ids' => implode(Lang::get('admin.list_sep'), $unknownColors)]));
 
             return;
         }
@@ -629,19 +629,23 @@ final class ProductManagementService
                 'name'
             );
 
-            $validator->fail('colors',
-                'هذه الألوان ليست من ألوان نوع «' . $type['name_ar'] . '»: '
-                . implode('، ', $names !== [] ? $names : array_map('strval', $outside))
-                . '. أضفها إلى النوع أولًا، أو اختر من ألوانه.');
+            $typeName = Lang::locale() === 'en' && trim((string) $type['name_en']) !== '' ? $type['name_en'] : $type['name_ar'];
+            $validator->fail('colors', Lang::get('admin.product.err.colours_outside', [
+                'type'   => "\u{2068}" . $typeName . "\u{2069}",
+                'names'  => implode(Lang::get('admin.list_sep'), array_map(
+                    static fn (string $n): string => "\u{2068}" . $n . "\u{2069}",
+                    $names !== [] ? $names : array_map('strval', $outside)
+                )),
+            ]));
         }
 
         $sizeCount = count($this->garmentTypes->sizeIdsFor($garmentId));
         $total = count($colorIds) * $sizeCount;
 
         if ($total > self::MAX_VARIANTS) {
-            $validator->fail('colors',
-                count($colorIds) . ' لون × ' . $sizeCount . ' مقاس = ' . $total
-                . ' متغيّر، والحدّ الأقصى ' . self::MAX_VARIANTS . '. قلّل الاختيار.');
+            $validator->fail('colors', Lang::get('admin.product.err.too_many_variants', [
+                'colours' => count($colorIds), 'sizes' => $sizeCount, 'total' => $total, 'max' => self::MAX_VARIANTS,
+            ]));
         }
     }
 
@@ -1026,7 +1030,7 @@ final class ProductManagementService
             $path = $select->fetchColumn();
 
             if ($path === false) {
-                throw new ValidationException(['primary_image_id' => 'الصورة الأساسية لا تتبع هذا المنتج.']);
+                throw new ValidationException(['primary_image_id' => Lang::get('admin.product.err.primary_foreign')]);
             }
 
             $primary = $this->pdo->prepare('UPDATE product_images SET primary_for = ? WHERE id = ?');

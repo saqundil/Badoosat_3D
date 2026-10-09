@@ -22,6 +22,10 @@ declare(strict_types=1);
  * @var int     $minHeight
  * @var ?string $removeName  checkbox name that clears the stored image
  * @var string  $ratio       CSS aspect-ratio of the slot, e.g. "4 / 5"
+ * @var bool    $multiple    several files at once (the name gets [] added); the
+ *                           preview shows the first, the status counts them
+ * @var array<string,string|bool> $inputAttrs   extra attributes on the file input
+ * @var array<string,string|bool> $removeAttrs  extra attributes on the remove box
  */
 
 use App\Support\Format;
@@ -37,6 +41,21 @@ $minWidth   ??= 0;
 $minHeight  ??= 0;
 $removeName ??= null;
 $ratio      ??= '4 / 3';
+$multiple   ??= false;
+$inputAttrs ??= [];
+$removeAttrs ??= [];
+
+$extra = static function (array $attrs): string {
+    $out = '';
+    foreach ($attrs as $key => $value) {
+        if ($value === false) {
+            continue;
+        }
+        $out .= ' ' . e((string) $key) . ($value === true ? '' : '="' . e((string) $value) . '"');
+    }
+
+    return $out;
+};
 
 $limit = UploadLimit::bytes();
 ?>
@@ -49,6 +68,7 @@ $limit = UploadLimit::bytes();
          data-msg-big="<?= e(Lang::get('admin.form.drop_big', ['mb' => UploadLimit::mebibytes($limit)])) ?>"
          data-msg-type="<?= e(Lang::get('admin.form.drop_type')) ?>"
          data-msg-chosen="<?= e(Lang::get('admin.form.drop_chosen')) ?>"
+         data-msg-many="<?= e(Lang::get('admin.form.drop_many')) ?>"
          style="--drop-ratio: <?= e($ratio) ?>">
         <div class="dropzone__frame">
             <img class="dropzone__preview" alt="" width="800" height="600" data-preview<?= $current !== null ? ' src="' . e($current) . '"' : ' hidden' ?>>
@@ -62,11 +82,11 @@ $limit = UploadLimit::bytes();
             <label class="button button--secondary button--small" for="<?= e($id) ?>">
                 <?= e(Lang::get($current !== null ? 'admin.form.drop_replace' : 'admin.form.drop_choose')) ?>
             </label>
-            <input class="dropzone__input" type="file" id="<?= e($id) ?>" name="<?= e($name) ?>" accept="<?= e($accept) ?>"
-                   aria-labelledby="<?= e($id) ?>-label" aria-describedby="<?= e($id) ?>-status<?= $help !== null ? ' ' . e($id) . '-help' : '' ?>">
+            <input class="dropzone__input" type="file" id="<?= e($id) ?>" name="<?= e($name . ($multiple ? '[]' : '')) ?>" accept="<?= e($accept) ?>"
+                   aria-labelledby="<?= e($id) ?>-label" aria-describedby="<?= e($id) ?>-status<?= $help !== null ? ' ' . e($id) . '-help' : '' ?>"<?= $multiple ? ' multiple' : '' ?><?= $extra($inputAttrs) ?>>
             <?php if ($current !== null && $removeName !== null) { ?>
                 <label class="check check--small">
-                    <input type="checkbox" name="<?= e($removeName) ?>" value="1" data-drop-remove>
+                    <input type="checkbox" name="<?= e($removeName) ?>" value="1" data-drop-remove<?= $extra($removeAttrs) ?>>
                     <span class="check__box" aria-hidden="true"></span>
                     <span class="check__text"><?= e(Lang::get('admin.form.drop_remove')) ?></span>
                 </label>

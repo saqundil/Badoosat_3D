@@ -30,6 +30,8 @@ declare(strict_types=1);
  * @var ?string  $saveForm     id of the form the Save button submits; null = no Save
  * @var bool     $history      undo/redo buttons; the page handles studio:undo / studio:redo
  * @var bool     $zoom
+ * @var ?callable $tools       extra toolbar controls the page owns (camera views, …)
+ * @var ?callable $layersFoot  printed under the layers list, outside the listbox
  */
 
 use App\Support\Lang;
@@ -40,6 +42,8 @@ $languages   ??= [];
 $saveForm    ??= null;
 $history     ??= false;
 $zoom        ??= false;
+$tools       ??= null;
+$layersFoot  ??= null;
 
 $firstDevice = array_key_first($devices);
 $firstLang   = array_key_first($languages);
@@ -89,6 +93,8 @@ $firstLang   = array_key_first($languages);
             </span>
         <?php } ?>
 
+        <?php if ($tools !== null) { $tools(); } ?>
+
         <span class="studio__spacer"></span>
 
         <button type="button" class="icon-button icon-button--quiet studio__toggle" data-studio-toggle="panel"
@@ -99,6 +105,7 @@ $firstLang   = array_key_first($languages);
     <aside class="studio__pane studio__pane--layers" id="<?= e($id) ?>-layers" aria-labelledby="<?= e($id) ?>-layers-title">
         <h2 class="studio__pane-title" id="<?= e($id) ?>-layers-title"><?= e($layersTitle) ?></h2>
         <div class="studio__layers" role="listbox" aria-labelledby="<?= e($id) ?>-layers-title" data-studio-layers><?php $layers(); ?></div>
+        <?php if ($layersFoot !== null) { $layersFoot(); } ?>
     </aside>
 
     <div class="studio__stage" data-studio-stage>

@@ -229,6 +229,8 @@
     --admin-max: 1440px;
     /* A form page reads in one column; wider lines only stretch the fields. */
     --form-max: 960px;
+    /* The product editor's 3D stage; phones show a still picture, smaller. */
+    --product-stage-h: 560px;
     --focus-ring: 2px solid var(--c-accent);
     --focus-offset: 2px;
 
@@ -243,6 +245,12 @@
     --notch-start: calc(var(--list-w) + var(--space-5) * 2);
     --notch-w: 360px;
     --notch-h: 64px;
+}
+
+@media (max-width: 767px) {
+    :root {
+        --product-stage-h: 340px;
+    }
 }
 
 @media (min-width: 768px) {

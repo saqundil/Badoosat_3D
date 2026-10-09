@@ -367,7 +367,9 @@ const show = (zone, file) => {
     const url = URL.createObjectURL(file);
     preview.onload = () => {
         const small = preview.naturalWidth < Number(msgs.minWidth) || preview.naturalHeight < Number(msgs.minHeight);
-        status.textContent = small ? msgs.msgSmall : msgs.msgChosen.replace(':name', file.name);
+        const count = input.files.length;
+        status.textContent = small ? msgs.msgSmall
+            : count > 1 ? msgs.msgMany.replace(':n', numbers.format(count)) : msgs.msgChosen.replace(':name', file.name);
         zone.classList.toggle('dropzone--warn', small);
     };
     preview.src = url;
@@ -390,13 +392,16 @@ for (const zone of document.querySelectorAll('[data-dropzone]')) {
         }
     });
 
-    // Put dropped or pasted files into the real input, so the form posts them.
+    // Put dropped or pasted files into the real input, so the form posts them:
+    // the first, or all of them when the input takes several.
     const take = (files) => {
         if (!files || !files.length) {
             return;
         }
         const list = new DataTransfer();
-        list.items.add(files[0]);
+        for (const file of input.multiple ? files : [files[0]]) {
+            list.items.add(file);
+        }
         input.files = list.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
     };

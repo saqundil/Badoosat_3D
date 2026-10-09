@@ -4199,6 +4199,7 @@ a.pager__page:hover {
 
 .studio__tabs .segmented__option {
     flex: 1;
+    padding-inline: var(--space-2);
 }
 
 .studio__tabpanel {
@@ -4355,6 +4356,422 @@ a.pager__page:hover {
     .studio__stage {
         min-block-size: 320px;
     }
+}
+
+/* --------------------------------------------- the product editor */
+
+/* A section row with its one-line state under the name. */
+.layer-row__text {
+    display: grid;
+    min-inline-size: 0;
+}
+
+.layer-row__hint {
+    overflow: hidden;
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-regular);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* "Ready to sell?": what a product needs before anyone can buy it. */
+.readiness {
+    display: grid;
+    gap: var(--space-2);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--c-line);
+}
+
+.readiness__title {
+    font-size: var(--fs-small);
+    font-weight: var(--weight-semibold);
+}
+
+.readiness__verdict {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+}
+
+.readiness__list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.readiness__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.readiness__mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 22px;
+    block-size: 22px;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    color: var(--c-ink-2);
+}
+
+.readiness__mark .icon {
+    inline-size: 14px;
+    block-size: 14px;
+}
+
+.readiness__item.is-ok .readiness__mark {
+    background: var(--c-accent);
+    color: var(--c-surface);
+}
+
+.readiness__link {
+    min-block-size: 32px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--c-ink);
+    font: inherit;
+    font-size: var(--fs-small);
+    text-align: start;
+    cursor: pointer;
+}
+
+.readiness__item.is-ok .readiness__link {
+    color: var(--c-ink-2);
+}
+
+@media (pointer: coarse), (max-width: 767px) {
+    .readiness__link {
+        min-block-size: var(--tap);
+    }
+}
+
+.readiness__link:hover {
+    color: var(--c-accent);
+    text-decoration: underline;
+}
+
+/* The preview's colour: swatches from the type, a radio group. */
+.preview-tools {
+    display: contents;
+}
+
+/* Where there is no scene there is nothing for the view and colour tools to
+   turn, so the bar that holds them goes too. */
+@media (max-width: 767px), (pointer: coarse) {
+    .studio__toolbar:has([data-needs-webgl]) {
+        display: none;
+    }
+}
+
+.preview-colours {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.preview-colours__item {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: var(--radius-pill-token);
+    cursor: pointer;
+}
+
+.preview-colours__item input {
+    position: absolute;
+    opacity: 0;
+    inline-size: 1px;
+    block-size: 1px;
+}
+
+.preview-colours__item .swatch {
+    inline-size: 20px;
+    block-size: 20px;
+}
+
+.preview-colours__item:has(input:checked) {
+    box-shadow: inset 0 0 0 2px var(--c-accent);
+}
+
+.preview-colours__item:has(input:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+}
+
+/* The stage: the model when WebGL may run, a still picture otherwise. */
+.product-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    block-size: var(--product-stage-h);
+    background: var(--c-surface);
+}
+
+.product-stage canvas {
+    grid-area: 1 / 1;
+    inline-size: 100%;
+    block-size: 100%;
+    cursor: grab;
+    touch-action: none;
+}
+
+.product-stage__poster {
+    grid-area: 1 / 1;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    padding: var(--space-5);
+}
+
+.product-stage__poster[hidden] {
+    display: none;
+}
+
+.product-stage__poster img {
+    max-inline-size: min(100%, 420px);
+    max-block-size: calc(var(--product-stage-h) - 120px);
+    block-size: auto;
+    border-radius: var(--r-tile);
+    object-fit: contain;
+}
+
+.product-stage__empty {
+    display: grid;
+    place-items: center;
+    inline-size: 120px;
+    block-size: 120px;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    color: var(--c-ink-2);
+}
+
+.product-stage__empty .icon {
+    inline-size: 48px;
+    block-size: 48px;
+}
+
+.product-stage__note,
+.product-stage__status {
+    color: var(--c-ink-2);
+    font-size: var(--fs-small);
+    text-align: center;
+}
+
+/* On wide screens with a mouse the note is never true: the scene takes over. */
+@media (min-width: 768px) and (pointer: fine) {
+    .product-stage__note {
+        display: none;
+    }
+}
+
+.product-stage__status {
+    position: absolute;
+    inset-block-end: var(--space-4);
+    inset-inline: var(--space-4);
+}
+
+.product-stage__status[hidden] {
+    display: none;
+}
+
+/* Photos: two to a row in the properties pane, one card each. */
+.photo-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.photo-card {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-tile);
+    background: var(--c-surface);
+}
+
+.photo-card__img {
+    inline-size: 100%;
+    block-size: auto;
+    aspect-ratio: 1;
+    border-radius: calc(var(--r-tile) - var(--space-2));
+    background: var(--c-surface-2);
+    object-fit: cover;
+}
+
+.photo-card__img--missing {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    color: var(--c-danger);
+    font-size: var(--fs-caption);
+    text-align: center;
+}
+
+.photo-card__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.check__box--radio,
+.check input:checked + .check__box--radio {
+    border-radius: var(--radius-pill-token);
+}
+
+.check--danger:has(input:checked) .check__text {
+    color: var(--c-danger);
+}
+
+.check--danger input:checked + .check__box {
+    background: var(--c-danger);
+    border-color: var(--c-danger);
+}
+
+/* Artwork placement: three ranges with their value beside them. */
+.placement {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.placement > .button {
+    justify-self: start;
+}
+
+.range {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.range__input {
+    flex: 1;
+    min-inline-size: 0;
+    block-size: var(--tap);
+    margin: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.range__input::-webkit-slider-runnable-track {
+    block-size: 6px;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    box-shadow: inset 0 0 0 1px var(--c-line);
+}
+
+.range__input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    inline-size: 20px;
+    block-size: 20px;
+    margin-block-start: -7px;
+    border: 3px solid var(--c-surface);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-accent);
+    box-shadow: var(--shadow-sm);
+}
+
+.range__input::-moz-range-track {
+    block-size: 6px;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+}
+
+.range__input::-moz-range-thumb {
+    inline-size: 16px;
+    block-size: 16px;
+    border: 3px solid var(--c-surface);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-accent);
+}
+
+.range__input:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+    border-radius: var(--radius-pill-token);
+}
+
+.range__value {
+    min-inline-size: 3.5em;
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-semibold);
+    text-align: end;
+}
+
+/* Blocks inside a properties tab: a hairline between, no box around. */
+.panel-block {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-2);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--c-line);
+}
+
+.panel-block:first-child {
+    padding-block-start: 0;
+    border-block-start: 0;
+}
+
+.panel-block__title {
+    font-size: var(--fs-small);
+    font-weight: var(--weight-semibold);
+}
+
+.panel-block--danger .panel-block__title {
+    color: var(--c-danger);
+}
+
+.variant-summary {
+    display: grid;
+    gap: var(--space-1);
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.variant-summary li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    min-block-size: 32px;
+}
+
+.variant-summary__name {
+    font-weight: var(--weight-semibold);
+}
+
+.variant-summary__meta {
+    margin-inline-start: auto;
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+    font-variant-numeric: tabular-nums;
+}
+
+.variant-count {
+    font-variant-numeric: tabular-nums;
+}
+
+.variant-count--empty {
+    color: var(--c-danger);
 }
 
 /* ---------------------------------------------------- settings layout */

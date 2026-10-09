@@ -71,6 +71,7 @@ function admin_icon(string $name): string
         'shirt'    => '<path d="M9 4l-5 3 2 4 2-1v10h8V10l2 1 2-4-5-3a3 3 0 0 1-6 0z"/>',
         'store'    => '<path d="M4 9l1.5-4h13L20 9"/><path d="M4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0A2.7 2.7 0 0 0 20 9"/><path d="M5.5 11.5V20h13v-8.5"/><path d="M10 20v-5h4v5"/>',
         'plus'     => '<path d="M12 5v14M5 12h14"/>',
+        'check'    => '<path d="M5 12.5l4.5 4.5L19 7"/>',
         'gear'     => '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
     ];
     // undo/redo point back and forward in time, which reads along the line.
