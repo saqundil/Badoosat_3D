@@ -283,8 +283,8 @@ return [
     'admin.time.days_ago'  => '{n, plural, one{منذ يوم} two{منذ يومين} few{منذ # أيام} many{منذ # يومًا} other{منذ # يوم}}',
     'admin.count.orders'   => '{n, plural, zero{لا طلبات} one{طلب واحد} two{طلبان} few{# طلبات} many{# طلبًا} other{# طلب}}',
 
-    'admin.trend.vs_last_month' => ':pct مقارنة بالشهر الماضي',
-    'admin.trend.no_base'       => 'لا طلبات في الشهر الماضي للمقارنة',
+    'admin.trend.vs_same_days'  => ':pct مقارنة بالأيام نفسها من الشهر الماضي',
+    'admin.trend.no_base'       => 'لا طلبات في الأيام نفسها من الشهر الماضي للمقارنة',
 
     'admin.stat.waiting'      => 'طلبات جديدة',
     'admin.stat.waiting_none' => 'لا شيء بانتظار الإنتاج',
@@ -388,6 +388,8 @@ return [
     'admin.table.pages'           => 'الصفحات',
     'admin.table.prev'            => 'الصفحة السابقة',
     'admin.table.next'            => 'الصفحة التالية',
+    'admin.table.page'            => 'الصفحة :n',
+    'admin.table.showing'         => ':first إلى :last من أصل :total',
 
     'admin.studio.toolbar'       => 'أدوات المحرّر',
     'admin.studio.layers'        => 'الأقسام',

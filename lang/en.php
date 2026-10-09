@@ -69,8 +69,8 @@ return [
     'admin.time.days_ago'  => '{n, plural, one{# day ago} other{# days ago}}',
     'admin.count.orders'   => '{n, plural, =0{No orders} one{# order} other{# orders}}',
 
-    'admin.trend.vs_last_month' => ':pct from last month',
-    'admin.trend.no_base'       => 'No orders last month to compare with',
+    'admin.trend.vs_same_days'  => ':pct on the same days last month',
+    'admin.trend.no_base'       => 'No orders on the same days last month to compare with',
 
     'admin.stat.waiting'      => 'New orders',
     'admin.stat.waiting_none' => 'Nothing waiting for production',
@@ -174,6 +174,8 @@ return [
     'admin.table.pages'           => 'Pages',
     'admin.table.prev'            => 'Previous page',
     'admin.table.next'            => 'Next page',
+    'admin.table.page'            => 'Page :n',
+    'admin.table.showing'         => ':first–:last of :total',
 
     'admin.studio.toolbar'       => 'Editor tools',
     'admin.studio.layers'        => 'Sections',

@@ -227,12 +227,71 @@ final class OrderRepository extends Repository
     /**
      * The orders list with the dashboard's filters: a set of statuses (a tab),
      * an inclusive date range, and one search box over the number, the name,
-     * the email and the phone. Same columns as recent().
+     * the email and the phone. Same columns as recent(), newest first, one page
+     * at a time.
      *
      * @param list<string> $statuses empty means every status
      * @return array<int,array<string,mixed>>
      */
-    public function search(array $statuses, ?string $from, ?string $to, string $query, int $limit = 80): array
+    public function search(array $statuses, ?string $from, ?string $to, string $query, int $limit = 80, int $offset = 0): array
+    {
+        [$where, $params] = $this->filters($statuses, $from, $to, $query);
+
+        $sql = 'SELECT o.*, COALESCE(SUM(oi.quantity), 0) AS pieces,
+                       SUM(oi.item_type = \'custom\') AS custom_lines
+                  FROM orders o
+             LEFT JOIN order_items oi ON oi.order_id = o.id'
+            . $where
+            . ' GROUP BY o.id ORDER BY o.id DESC LIMIT :limit OFFSET :offset';
+
+        $stmt = $this->pdo()->prepare($sql);
+
+        foreach ($params as $name => $value) {
+            $stmt->bindValue(':' . $name, $value);
+        }
+
+        $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+        $stmt->bindValue(':offset', max(0, $offset), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * How many orders in each status match the date range and the search --
+     * the same filters as search(), without the tab. The tabs, the list's
+     * count and its pages all read from this one query, so they cannot
+     * disagree with each other or with the rows shown.
+     *
+     * @return array<string,int> status => number of matching orders
+     */
+    public function countMatching(?string $from, ?string $to, string $query): array
+    {
+        [$where, $params] = $this->filters([], $from, $to, $query);
+
+        $stmt = $this->pdo()->prepare('SELECT o.status, COUNT(*) AS n FROM orders o' . $where . ' GROUP BY o.status');
+
+        foreach ($params as $name => $value) {
+            $stmt->bindValue(':' . $name, $value);
+        }
+
+        $stmt->execute();
+        $counts = [];
+
+        foreach ($stmt as $row) {
+            $counts[(string) $row['status']] = (int) $row['n'];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * The WHERE clause shared by search() and countMatching().
+     *
+     * @param list<string> $statuses
+     * @return array{0:string,1:array<string,string>}
+     */
+    private function filters(array $statuses, ?string $from, ?string $to, string $query): array
     {
         $where  = [];
         $params = [];
@@ -277,23 +336,7 @@ final class OrderRepository extends Repository
             $where[] = '(' . implode(' OR ', $match) . ')';
         }
 
-        $sql = 'SELECT o.*, COALESCE(SUM(oi.quantity), 0) AS pieces,
-                       SUM(oi.item_type = \'custom\') AS custom_lines
-                  FROM orders o
-             LEFT JOIN order_items oi ON oi.order_id = o.id'
-            . ($where === [] ? '' : ' WHERE ' . implode(' AND ', $where))
-            . ' GROUP BY o.id ORDER BY o.id DESC LIMIT :limit';
-
-        $stmt = $this->pdo()->prepare($sql);
-
-        foreach ($params as $name => $value) {
-            $stmt->bindValue(':' . $name, $value);
-        }
-
-        $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
-        $stmt->execute();
-
-        return $stmt->fetchAll();
+        return [$where === [] ? '' : ' WHERE ' . implode(' AND ', $where), $params];
     }
 
     /** @return array<string,int> status => number of orders in it */

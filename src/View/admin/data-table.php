@@ -35,10 +35,9 @@ declare(strict_types=1);
  * @var ?string $sortDir    'asc'|'desc'
  * @var ?callable(string,string):string $sortHref   key, dir => URL (server sorting)
  * @var ?array{text:string,hint?:string,action?:array{href:string,text:string}} $empty
- * @var ?array{page:int,pages:int,href:callable(int):string} $pagination
+ * @var ?array{page:int,pages:int,href:callable(int):string,summary?:string} $pagination  see pager.php
  */
 
-use App\Support\Format;
 use App\Support\Lang;
 
 $sortValue  ??= null;
@@ -142,26 +141,8 @@ $selectable = $bulk !== null;
             </table>
         </div>
 
-        <?php if ($pagination !== null && $pagination['pages'] > 1) {
-            $page = $pagination['page'];
-            $pages = $pagination['pages']; ?>
-            <nav class="pager" aria-label="<?= e(Lang::get('admin.table.pages')) ?>">
-                <?php if ($page > 1) { ?>
-                    <a class="icon-button icon-button--surface" href="<?= e(($pagination['href'])($page - 1)) ?>" aria-label="<?= e(Lang::get('admin.table.prev')) ?>"><?= admin_icon('back') ?></a>
-                <?php } ?>
-                <?php for ($n = 1; $n <= $pages; $n++) { ?>
-                    <?php if ($n === $page) { ?>
-                        <span class="pager__page" aria-current="page"><?= e(Format::number($n)) ?></span>
-                    <?php } elseif ($n === 1 || $n === $pages || abs($n - $page) <= 1) { ?>
-                        <a class="pager__page" href="<?= e(($pagination['href'])($n)) ?>"><?= e(Format::number($n)) ?></a>
-                    <?php } elseif (abs($n - $page) === 2) { ?>
-                        <span class="pager__gap" aria-hidden="true">…</span>
-                    <?php } ?>
-                <?php } ?>
-                <?php if ($page < $pages) { ?>
-                    <a class="icon-button icon-button--surface" href="<?= e(($pagination['href'])($page + 1)) ?>" aria-label="<?= e(Lang::get('admin.table.next')) ?>"><?= admin_icon('forward') ?></a>
-                <?php } ?>
-            </nav>
-        <?php } ?>
+        <?php if ($pagination !== null) {
+            admin_partial('pager', $pagination);
+        } ?>
     <?php } ?>
 </section>

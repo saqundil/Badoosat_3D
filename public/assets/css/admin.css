@@ -1659,6 +1659,13 @@ textarea:focus-visible {
     display: none;
 }
 
+/* A grid item's automatic minimum is its content: without this the pill row
+   of tabs sets the panel's width, and the page scrolls sideways on phones.
+   The row scrolls inside itself instead. */
+.night-panel__tabs {
+    min-inline-size: 0;
+}
+
 .night-panel__body {
     min-inline-size: 0;
     padding: var(--space-5);
@@ -1848,6 +1855,7 @@ textarea:focus-visible {
     display: grid;
     gap: var(--space-1);
     list-style: none;
+    container-type: inline-size;
 }
 
 .order-row {
@@ -1892,6 +1900,7 @@ textarea:focus-visible {
 
 .order-row__id {
     font-weight: var(--weight-semibold);
+    white-space: nowrap;
 }
 
 .order-row__meta {
@@ -1914,8 +1923,10 @@ textarea:focus-visible {
     white-space: nowrap;
 }
 
-/* Below a comfortable row width the status moves under the total. */
-@media (max-width: 479px) {
+/* Below a comfortable row width the status moves under the total. The list's
+   own width decides, not the screen's: beside the detail card the list is
+   narrow on the widest monitor. */
+@container (inline-size < 480px) {
     .order-row {
         grid-template-columns: auto minmax(0, 1fr) auto;
         row-gap: var(--space-1);
@@ -2353,9 +2364,16 @@ textarea:focus-visible {
     align-items: start;
 }
 
+/* The rows scroll; the pager stays in view under them. */
 .orders-split__list {
+    display: flex;
+    flex-direction: column;
     min-inline-size: 0;
     max-block-size: var(--list-max-h);
+}
+
+.orders-split__list .order-list {
+    min-block-size: 0;
     overflow-y: auto;
     scrollbar-color: var(--c-night-2) transparent;
 }
@@ -3822,6 +3840,52 @@ a.pager__page:hover {
 
 .pager__gap {
     color: var(--c-ink-2);
+}
+
+/* The pager with its "21–40 of 104" line. */
+.pager-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block-start: var(--space-4);
+}
+
+.pager-row__summary {
+    margin: 0;
+    color: var(--c-ink-2);
+    font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
+}
+
+/* On the dark panel: night text, the current page stays the accent pill. */
+.pager-row--on-dark .pager-row__summary,
+.pager-row--on-dark .pager__gap {
+    color: var(--c-night-ink-2);
+}
+
+.pager-row--on-dark .pager__page {
+    color: var(--c-night-ink);
+}
+
+.pager-row--on-dark a.pager__page:hover {
+    background: var(--c-night-2);
+}
+
+.icon-button--on-dark {
+    border-color: var(--c-night-2);
+    background: transparent;
+    color: var(--c-night-ink);
+}
+
+.icon-button--on-dark:hover {
+    border-color: var(--c-night-ink-2);
+    background: var(--c-night-2);
+}
+
+.pager-row--on-dark :focus-visible {
+    outline-color: var(--c-night-ink);
 }
 
 /* ---------------------------------- narrow: every row becomes a card */

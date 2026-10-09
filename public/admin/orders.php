@@ -66,17 +66,33 @@ $to    = $day('to');
 $query = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 80);
 
 $explicit = isset($_GET['id']);
+$page     = max(1, (int) ($_GET['page'] ?? 1));
+
+/** Orders per page of the list. */
+const ORDERS_PER_PAGE = 20;
 
 /* ------------------------------------------------------- the list + detail */
 
-$list     = [];
-$counts   = [];
-$selected = null;
+$list       = [];
+$matching   = [];
+$total      = 0;
+$pages      = 1;
+$selected   = null;
 $listFailed = false;
 
+/** How many of $counts fall in a tab; the 'all' tab names no statuses. */
+$inTab = static fn (array $counts, array $statuses): int => $statuses === []
+    ? array_sum($counts)
+    : array_sum(array_intersect_key($counts, array_flip($statuses)));
+
 try {
-    $counts = $orders->countByStatus();
-    $list   = $orders->search(OrderService::TABS[$tab], $from, $to, $query);
+    // One count, with the filters applied, feeds the tabs, the list's own
+    // number and the pages, so none of them can contradict the rows shown.
+    $matching = $orders->countMatching($from, $to, $query);
+    $total    = $inTab($matching, OrderService::TABS[$tab]);
+    $pages    = max(1, (int) ceil($total / ORDERS_PER_PAGE));
+    $page     = min($page, $pages);
+    $list     = $orders->search(OrderService::TABS[$tab], $from, $to, $query, ORDERS_PER_PAGE, ($page - 1) * ORDERS_PER_PAGE);
 
     $selectedId = $explicit ? (int) $_GET['id'] : (int) ($list[0]['id'] ?? 0);
     $selected   = $selectedId > 0 ? $service->find($selectedId) : null;
@@ -104,8 +120,13 @@ $stats = null;
 try {
     $now        = new DateTimeImmutable('now');
     $monthStart = $now->modify('first day of this month')->setTime(0, 0);
-    $month      = $orders->totalsBetween($monthStart->format('Y-m-d H:i:s'), $monthStart->modify('+1 month')->format('Y-m-d H:i:s'));
-    $last       = $orders->totalsBetween($monthStart->modify('-1 month')->format('Y-m-d H:i:s'), $monthStart->format('Y-m-d H:i:s'));
+    $lastStart  = $monthStart->modify('-1 month');
+    $month      = $orders->totalsBetween($monthStart->format('Y-m-d H:i:s'), $now->format('Y-m-d H:i:s'));
+
+    // This month so far against the same stretch of last month, not against
+    // all of it: on the 10th, a whole month always looks like a collapse.
+    $lastSoFar = min($lastStart->add($monthStart->diff($now)), $monthStart);
+    $last      = $orders->totalsBetween($lastStart->format('Y-m-d H:i:s'), $lastSoFar->format('Y-m-d H:i:s'));
 
     $first = $now->setTime(0, 0)->modify('-13 days');
     $daily = $orders->dailyCounts($first->format('Y-m-d H:i:s'));
@@ -123,7 +144,7 @@ try {
     }
 
     $stats = [
-        'counts'       => $counts ?: $orders->countByStatus(),
+        'counts'       => $orders->countByStatus(),
         'month'        => $month,
         'last'         => $last,
         'bars'         => $bars,
@@ -134,7 +155,7 @@ try {
     error_log('admin/orders stats: ' . $e->getMessage());
 }
 
-/** "+12.5% from last month", or why there is nothing to compare with. */
+/** "+12.5% on the same days last month", or why there is nothing to compare with. */
 $trend = static function (int $now, int $before): array {
     if ($before === 0) {
         return ['direction' => 'flat', 'text' => Lang::get('admin.trend.no_base')];
@@ -144,7 +165,7 @@ $trend = static function (int $now, int $before): array {
 
     return [
         'direction' => $change > 0 ? 'up' : ($change < 0 ? 'down' : 'flat'),
-        'text'      => Lang::get('admin.trend.vs_last_month', ['pct' => Format::percent(abs($change))]),
+        'text'      => Lang::get('admin.trend.vs_same_days', ['pct' => Format::percent(abs($change))]),
     ];
 };
 
@@ -152,21 +173,17 @@ $title   = Lang::get('admin.orders.title');
 $current = 'orders';
 
 $body = static function () use (
-    $list, $counts, $selected, $explicit, $listFailed, $stats, $trend,
+    $list, $matching, $inTab, $total, $page, $pages, $selected, $explicit, $listFailed, $stats, $trend,
     $tab, $from, $to, $query, $notice, $error,
 ): void {
-    $sum = static fn (array $statuses): int => $statuses === []
-        ? array_sum($counts)
-        : array_sum(array_intersect_key($counts, array_flip($statuses)));
-
     $tabs = [];
 
     foreach (OrderService::TABS as $key => $statuses) {
         $tabs[] = [
             'key'     => $key,
             'label'   => Lang::get('admin.orders.tab.' . $key),
-            'count'   => Format::number($sum($statuses)),
-            'href'    => admin_url(['tab' => $key === 'all' ? null : $key, 'id' => null]),
+            'count'   => Format::number($inTab($matching, $statuses)),
+            'href'    => admin_url(['tab' => $key === 'all' ? null : $key, 'id' => null, 'page' => null]),
             'current' => $key === $tab,
         ];
     }
@@ -231,7 +248,7 @@ $body = static function () use (
         <?php admin_partial('filter-bar', [
             'action'    => '/admin/orders.php',
             'keep'      => $tab === 'all' ? [] : ['tab' => $tab],
-            'clearHref' => admin_url(['from' => null, 'to' => null, 'q' => null, 'id' => null]),
+            'clearHref' => admin_url(['from' => null, 'to' => null, 'q' => null, 'id' => null, 'page' => null]),
             'fields'    => [
                 ['type' => 'date', 'name' => 'from', 'label' => Lang::get('admin.filters.from'), 'value' => (string) $from],
                 ['type' => 'date', 'name' => 'to', 'label' => Lang::get('admin.filters.to'), 'value' => (string) $to],
@@ -242,10 +259,10 @@ $body = static function () use (
 
         <?php admin_partial('night-panel', [
             'title'     => Lang::get('admin.orders.tab.' . $tab),
-            'count'     => $listFailed ? null : Format::number(count($list)),
+            'count'     => $listFailed ? null : Format::number($total),
             'tabs'      => $tabs,
             'tabsLabel' => Lang::get('admin.orders.tabs_label'),
-            'body'      => static function () use ($list, $selected, $explicit, $listFailed, $from, $to, $query): void {
+            'body'      => static function () use ($list, $total, $page, $pages, $selected, $explicit, $listFailed, $from, $to, $query): void {
                 $filtered = $from !== null || $to !== null || $query !== '';
                 ?>
                 <div class="orders-split<?= $explicit && $selected !== null ? ' has-sheet' : '' ?>">
@@ -256,7 +273,7 @@ $body = static function () use (
                         } elseif ($list === []) {
                             admin_partial('state', ['kind' => 'empty', 'onDark' => true,
                                 'text'   => Lang::get($filtered ? 'admin.orders.empty_filtered' : 'admin.orders.empty'),
-                                'action' => $filtered ? ['href' => admin_url(['from' => null, 'to' => null, 'q' => null]), 'text' => Lang::get('admin.filters.clear')] : null]);
+                                'action' => $filtered ? ['href' => admin_url(['from' => null, 'to' => null, 'q' => null, 'page' => null]), 'text' => Lang::get('admin.filters.clear')] : null]);
                         } else { ?>
                             <ul class="order-list">
                                 <?php foreach ($list as $order) {
@@ -267,7 +284,21 @@ $body = static function () use (
                                     ]);
                                 } ?>
                             </ul>
-                        <?php } ?>
+
+                            <?php
+                            $first = ($page - 1) * ORDERS_PER_PAGE + 1;
+                            admin_partial('pager', [
+                                'page'    => $page,
+                                'pages'   => $pages,
+                                'href'    => static fn (int $n): string => admin_url(['page' => $n > 1 ? $n : null, 'id' => null]),
+                                'summary' => Lang::get('admin.table.showing', [
+                                    'first' => Format::number($first),
+                                    'last'  => Format::number($first + count($list) - 1),
+                                    'total' => Format::number($total),
+                                ]),
+                                'onDark'  => true,
+                            ]);
+                        } ?>
                     </div>
 
                     <div class="orders-split__detail">
