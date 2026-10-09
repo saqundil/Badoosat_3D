@@ -28,6 +28,20 @@ AddType model/gltf-binary .glb
     AddOutputFilterByType BROTLI_COMPRESS image/svg+xml
 </IfModule>
 
+# The editor island keeps fixed file names and its chunks import each other by
+# bare relative URL, so a version query cannot reach them. Instead of a week in
+# the cache they are revalidated on every load: an unchanged file costs a 304,
+# a new build arrives at once. The rule lives here and not in
+# assets/editor/.htaccess because the Vite build empties that folder.
+<FilesMatch "^editor(-scene)?\.(js|css)$">
+    <IfModule mod_expires.c>
+        ExpiresActive Off
+    </IfModule>
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache"
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set Referrer-Policy "strict-origin-when-cross-origin"

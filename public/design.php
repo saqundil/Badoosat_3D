@@ -208,9 +208,17 @@ $body = static function () use ($types, $type, $garmentId, $editorConfig, $switc
         <?php } ?>
 
         <?php if ($editorConfig !== null) { ?>
+            <?php /*
+                The bundle's URL carries no ?v=. editor-scene.js imports "./editor.js"
+                by its bare name, and a module is identified by its full URL: launching
+                editor.js?v=N as well loaded the entry twice, two Reacts met in one
+                tree and the island mounted blank. Freshness after a deploy comes from
+                public/.htaccess, which has these files revalidated on every load.
+                The stylesheet is a plain <link> and keeps its version.
+            */ ?>
             <div class="design-launch">
                 <button type="button" class="button button--primary"
-                        data-editor-launch="/assets/editor/editor.js?v=<?= e(ASSETS) ?>"
+                        data-editor-launch="/assets/editor/editor.js"
                         data-editor-styles="/assets/editor/editor.css?v=<?= e(ASSETS) ?>">
                     افتح المحرّر
                 </button>
