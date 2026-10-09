@@ -67,10 +67,13 @@ final class Format
         $figure = self::number($cents / 100, 2);
         $at     = mb_strpos($whole, $figure);
 
-        // Bidi marks and spaces belong to neither half.
-        $symbol = trim(
+        // Bidi marks and spaces belong to neither half. A regex and not trim():
+        // trim() works byte by byte, and U+061C begins with the same byte as
+        // the Arabic letter dal, so "د.أ." used to lose its first letter.
+        $symbol = (string) preg_replace(
+            '/^[\s\x{00A0}\x{202F}\x{200E}\x{200F}\x{061C}]+|[\s\x{00A0}\x{202F}\x{200E}\x{200F}\x{061C}]+$/u',
+            '',
             str_replace($figure, '', $whole),
-            " \u{00A0}\u{202F}\u{200E}\u{200F}\u{061C}",
         );
 
         return [
