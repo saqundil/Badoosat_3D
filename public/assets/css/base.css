@@ -1,0 +1,500 @@
+/*
+ * The components the new sections are built from, and the site footer.
+ *
+ * WHY THIS FILE EXISTS AND IS NOT PART OF home.css
+ *
+ * The button, the section heading, the scroll reveal and the card polish are used
+ * by the home page, by both listing pages and by the help page. Putting them in
+ * home.css would mean either loading the home page's stylesheet on the catalogue
+ * -- which is a lie about what that file is -- or writing them twice, which is how
+ * two buttons that were identical in March stop matching in June. So they are
+ * here, loaded on every page from layout.php, and home.css and products.css hold
+ * only what is particular to their own page.
+ *
+ * NOT ONE VALUE IN THIS FILE IS A LITERAL. Every colour, length, radius, shadow
+ * and duration is a var() from tokens.css. The exceptions are the unitless
+ * numbers that have no business being a token -- a z-index, an opacity, a grid
+ * column count -- and the gradient stop alphas, which a colour token cannot
+ * carry. Each is marked where it appears.
+ *
+ * WHAT THIS FILE MUST NOT TOUCH
+ *
+ * The navbar (.topbar*, hero.css), the hero (.hero*, hero.css) and the product
+ * card's image tile and price pill (.product-card__media, .product-card__price*,
+ * store.css, with their every length written at runtime by catalog-cards.js).
+ * There is no selector below that names any of them. The one rule that touches a
+ * card at all moves the WRAPPER around the tile -- a transform on an ancestor,
+ * which does not change the tile's measured width and so cannot invalidate the
+ * clip path computed from it.
+ */
+
+/* ============================================================== components */
+
+/*
+ * These three -- the button, the section heading, the reveal -- are used by the
+ * home page, the two listing pages and the help page. They live here because
+ * home.css is the one of the two page stylesheets that is always loaded on the
+ * page carrying the others; products.css re-declares nothing and relies on
+ * having been loaded alongside it only for the reveal, which it repeats. Kept
+ * together so a fourth page gets them by loading one file.
+ */
+
+/* ------------------------------------------------------------------ buttons */
+
+/*
+ * One button, three sizes, four states. .btn is deliberately NOT .button:
+ * store.css already owns .button and the cart, checkout and product pages are
+ * full of it, so reusing the name would mean editing a class that a dozen
+ * templates depend on. Two button systems is the smaller cost.
+ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--tap);
+    padding: var(--space-3) var(--space-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill-token);
+    font-family: inherit;
+    font-size: var(--fs-small);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    /* Named properties, not `all`: transitioning all is what makes a button
+       animate its own width when its label changes. */
+    transition: background-color var(--dur-fast) var(--ease),
+                border-color var(--dur-fast) var(--ease),
+                color var(--dur-fast) var(--ease),
+                transform var(--dur-fast) var(--ease);
+}
+
+.btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+}
+
+.btn--primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+.btn--outline {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text);
+}
+
+.btn--outline:hover {
+    border-color: var(--text);
+    background: var(--white);
+}
+
+/* For a button sitting on a photograph: opaque, so it is legible over anything. */
+.btn--light {
+    background: var(--white);
+    border-color: var(--white);
+    color: var(--text);
+}
+
+.btn--light:hover {
+    background: var(--off-white);
+    border-color: var(--off-white);
+}
+
+.btn--text {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text);
+    padding-inline: var(--space-2);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.btn--text:hover {
+    color: var(--text-muted);
+}
+
+.btn--sm {
+    min-height: var(--tap);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--fs-caption);
+}
+
+.btn--md {
+    padding: var(--space-3) var(--space-5);
+}
+
+.btn--lg {
+    padding: var(--space-4) var(--space-7);
+    font-size: var(--fs-body);
+}
+
+.btn:active {
+    /* 1px, and the only literal length in the file: it is a nudge, not a size,
+       and a token for it would imply it is tunable. */
+    transform: translateY(1px);
+}
+
+.btn:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.btn[aria-disabled='true'],
+.btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ---------------------------------------------------------- section heading */
+
+.section-head {
+    margin-bottom: var(--space-6);
+}
+
+/* The eyebrow, the title and the optional link on one baseline. */
+.section-head--row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.section-head__eyebrow {
+    margin-bottom: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+}
+
+.section-head__title {
+    color: var(--text);
+    font-size: var(--fs-h2);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+}
+
+.section-head__lede {
+    margin-top: var(--space-3);
+    max-width: 52ch;
+    color: var(--text-muted);
+    font-size: var(--fs-body);
+    font-weight: var(--weight-regular);
+    line-height: var(--leading-body);
+}
+
+/* "See more", with an arrow that knows which way the text runs. */
+.link-more {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap);
+    color: var(--text);
+    font-size: var(--fs-small);
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    transition: border-color var(--dur-fast) var(--ease), gap var(--dur-fast) var(--ease);
+}
+
+.link-more:hover {
+    border-color: var(--text);
+    gap: var(--space-3);
+}
+
+.link-more:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+
+/*
+ * The arrow is drawn pointing right and flipped by the container's direction.
+ * :dir() would be cleaner but is not in Safari's shipped set at the time of
+ * writing; [dir='rtl'] is the same rule with wider support, and these sections
+ * set dir on themselves rather than inheriting it from <html>.
+ */
+[dir='rtl'] .link-more svg {
+    transform: scaleX(-1);
+}
+
+/* ----------------------------------------------------- reveal on scroll */
+
+/*
+ * The hidden state is attached to an attribute that only reveal.js writes.
+ * Nothing is hidden by the stylesheet alone, so a visitor whose JavaScript did
+ * not run sees a complete page rather than an empty one -- which is why this is
+ * [data-revealed='false'] and not [data-reveal].
+ */
+[data-revealed='false'] {
+    opacity: 0;
+    /* Small. A 40px rise reads as the page assembling itself; 12px reads as the
+       section settling, which is the intent. */
+    transform: translateY(var(--space-3));
+}
+
+[data-reveal] {
+    transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
+    transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-revealed='true'] {
+    opacity: 1;
+    transform: none;
+}
+
+/*
+ * Belt and braces. reveal.js already declines to hide anything under this
+ * setting, so this rule fires only if a stale attribute survives in the DOM --
+ * and its job is to make sure that never means invisible content.
+ */
+@media (prefers-reduced-motion: reduce) {
+    [data-reveal],
+    [data-revealed='false'],
+    [data-revealed='true'] {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+/* -------------------------------------------------- product card, dressed */
+
+/*
+ * The only rules in this file that touch a product card, and they are scoped to
+ * .page--catalog -- the same scope store.css uses, which is what makes them apply
+ * to the catalogue, the help page's siblings and the home page's trending strip
+ * from one declaration instead of three.
+ *
+ * WHAT IS DELIBERATELY ABSENT
+ *
+ * The tile's aspect ratio, its radius, the price pill's box, its position, its
+ * type and the notch between them. Every one of those lengths is written onto the
+ * element at runtime by catalog-cards.js, measured from the tile's own width; a
+ * value stated here would be overwritten on the first resize and would read as an
+ * intermittent bug. The hover moves the WRAPPER around the tile -- translateY on
+ * an ancestor, which leaves the measured width untouched, so the clip path
+ * computed from it stays correct.
+ *
+ * And no wishlist heart. The shop has no such feature and an icon promising one
+ * is a button that does nothing.
+ */
+.page--catalog .product-card__media-wrap {
+    transition: transform var(--dur-fast) var(--ease);
+}
+
+.page--catalog .product-card:hover .product-card__media-wrap {
+    transform: translateY(calc(var(--space-1) * -1));
+}
+
+/* The product name, which the brief allows to be dressed. */
+.page--catalog .product-card__name {
+    transition: color var(--dur-fast) var(--ease);
+}
+
+.page--catalog .product-card:hover .product-card__name {
+    color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page--catalog .product-card:hover .product-card__media-wrap {
+        transform: none;
+    }
+}
+
+/* The cut, ahead of the summary on the caption's second line. */
+.product-card__cut {
+    color: var(--text);
+    font-weight: var(--weight-bold);
+}
+
+/*
+ * A middle dot between the cut and the summary.
+ *
+ * The escape is written in full as six hex digits, so no whitespace terminator is
+ * needed and none can be swallowed -- and the spaces around it are margin rather
+ * than characters inside content, because a leading space in a content string is
+ * collapsed away by the time it is painted. An earlier version of this rule
+ * carried a NUL byte followed by the text "b7", which is what a malformed escape
+ * looks like on the page.
+ */
+.product-card__cut::after {
+    content: '\0000B7';
+    margin-inline: var(--space-1);
+    color: var(--gray-400);
+    font-weight: var(--weight-regular);
+}
+
+/* ================================================================= footer */
+
+/*
+ * New class names throughout. hero.css still carries .footer and .credit, which
+ * the old two-line footer used; those rules are now unreferenced, and leaving
+ * them is the price of not editing the file that owns the hero.
+ */
+.site-footer {
+    margin-block-start: var(--section-gap);
+    background: var(--gray-900);
+    color: var(--text-on-dark);
+    font-size: var(--fs-small);
+    line-height: var(--leading-body);
+}
+
+.site-footer__inner {
+    width: min(100%, var(--container));
+    margin-inline: auto;
+    padding: var(--space-8) var(--gutter) var(--space-7);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-7);
+}
+
+@media (min-width: 640px) {
+    .site-footer__inner {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .site-footer__inner {
+        /* The brand column is wider than the three link columns: it holds a
+           paragraph and they hold single words. */
+        grid-template-columns: 1.6fr repeat(3, minmax(0, 1fr));
+        gap: var(--space-6);
+    }
+}
+
+.site-footer__logo {
+    display: block;
+    height: auto;
+    /* The wordmark is dark ink on transparent; on a charcoal footer it needs
+       inverting rather than a second file to maintain. */
+    filter: invert(1) brightness(1.6);
+    margin-bottom: var(--space-4);
+}
+
+.site-footer__about {
+    max-width: 44ch;
+    color: var(--text-on-dark-muted);
+}
+
+.site-footer__heading {
+    margin-bottom: var(--space-4);
+    color: var(--white);
+    font-size: var(--fs-small);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+}
+
+.site-footer__links {
+    list-style: none;
+    display: grid;
+    /* No gap: the 44px tap target on each link is the spacing, and a gap on top
+       of it would space them twice. */
+    gap: 0;
+}
+
+.site-footer__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    color: var(--text-on-dark-muted);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease);
+}
+
+.site-footer__links a:hover {
+    color: var(--white);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.site-footer__links a:focus-visible,
+.site-footer__social a:focus-visible,
+.site-footer__credit a:focus-visible {
+    outline: 3px solid var(--text-on-dark);
+    outline-offset: 3px;
+}
+
+.site-footer__social {
+    list-style: none;
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.site-footer__social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--tap);
+    height: var(--tap);
+    border: 1px solid var(--gray-700);
+    border-radius: 50%;
+    color: var(--text-on-dark-muted);
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.site-footer__social a:hover {
+    color: var(--white);
+    border-color: var(--text-on-dark);
+}
+
+.site-footer__bar {
+    border-top: 1px solid var(--gray-800);
+}
+
+.site-footer__bar > * {
+    /* Both paragraphs share the container, so the copyright lines up with the
+       brand column above it rather than with the viewport edge. */
+    width: min(100%, var(--container));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+}
+
+.site-footer__bar p {
+    padding-block: var(--space-4);
+    color: var(--text-on-dark-muted);
+    font-size: var(--fs-caption);
+}
+
+.site-footer__credit {
+    border-top: 1px solid var(--gray-800);
+}
+
+.site-footer__credit a {
+    color: var(--text-on-dark);
+}
+
+@media (min-width: 768px) {
+    .site-footer__bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+    }
+
+    .site-footer__bar > * {
+        width: auto;
+        margin-inline: 0;
+    }
+
+    .site-footer__bar > :first-child {
+        padding-inline-start: max(var(--gutter), calc((100vw - var(--container)) / 2 + var(--gutter)));
+    }
+
+    .site-footer__bar > :last-child {
+        padding-inline-end: max(var(--gutter), calc((100vw - var(--container)) / 2 + var(--gutter)));
+    }
+
+    .site-footer__credit {
+        border-top: 0;
+    }
+}

@@ -1,0 +1,30 @@
+/vendor/
+/node_modules/
+/build/
+
+# Runtime data: caches, logs, customer originals, press files, exports. Every
+# folder under storage/ is ignored, present or future; only the placeholders
+# that keep the folder and its "Deny from all" guard are committed.
+/storage/*
+!/storage/*/
+/storage/*/*
+!/storage/*/.gitkeep
+!/storage/*/.htaccess
+
+/public/uploads/*
+!/public/uploads/.htaccess
+!/public/uploads/.gitignore
+
+# Secrets and machine-local settings
+.env
+.env.*
+!.env.example
+/config/local.php
+*.pem
+*.key
+
+/editor-src/node_modules/
+/editor-src/dist/
+
+# Visual QA screenshots (badoosat-visual-qa)
+/qa/shots/

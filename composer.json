@@ -1,0 +1,19 @@
+{
+    "name": "store/tshirt-print",
+    "description": "Printed t-shirt store: raw PHP, no framework.",
+    "type": "project",
+    "require": {
+        "php": ">=8.2",
+        "phpmailer/phpmailer": "^7.1",
+        "setasign/fpdf": "^1.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

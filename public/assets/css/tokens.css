@@ -1,0 +1,251 @@
+/*
+ * The design system, and nothing else.
+ *
+ * Variables only: no selector in this file paints anything. It is loaded first,
+ * before hero.css and store.css, so every value below is available to them and
+ * to the sections built on top of them -- and so that a later file can still
+ * win, which matters because hero.css and store.css own the hero, the navbar
+ * and the product card, and this file must not move any of them.
+ *
+ * WHY THE NAMES ARE NOT THE OBVIOUS ONES
+ *
+ * --bg, --surface, --ink, --muted, --shadow, --line and --radius-card are
+ * already declared on :root by hero.css and store.css, and those two files load
+ * AFTER this one. Redeclaring any of them here would be a variable that loses
+ * to the old value in one place and wins in another -- the worst kind of token,
+ * because it reads as deliberate. So the page-level colours are --page-bg and
+ * --white, the text is --text, and the two shadows are --shadow-sm/--shadow-md.
+ * Nothing here collides with a name that already exists.
+ *
+ * WHY THE GREYS ARE WARM
+ *
+ * The hero sits on --paper #edebe6, which is an off-white with yellow in it.
+ * A neutral #F7F7F8 section directly under it does not read as restrained, it
+ * reads as a second website. The ramp below is the hero's own paper and ink
+ * with the steps filled in between them, so the new sections are the same
+ * material as the card above them.
+ */
+
+:root {
+    /* ------------------------------------------------------------- colours */
+
+    --white: #ffffff;
+    --off-white: #f7f6f3;
+
+    /*
+     * Nine steps from the hero's paper to just short of its ink. Every one is
+     * on the same warm axis, so two adjacent steps never read as two hues.
+     */
+    --gray-50:  #faf9f7;
+    --gray-100: #f3f1ed;
+    --gray-200: #e8e5df;
+    --gray-300: #d8d4cb;   /* == hero.css --line, restated by name */
+    --gray-400: #b6b1a6;
+    --gray-500: #8a8a85;   /* == hero.css --dim */
+    --gray-600: #6d6a63;   /* == hero.css --muted */
+    --gray-700: #4a4843;
+    --gray-800: #2a2a28;
+    --gray-900: #141414;   /* == hero.css --card */
+
+    /* Page surfaces. --page-bg is the hero's paper: the seam is invisible. */
+    --page-bg: #edebe6;
+    --page-bg-soft: var(--gray-100);
+    --page-bg-muted: var(--gray-200);
+    --surface-card: var(--white);
+
+    /*
+     * Text. 15.9:1 on --page-bg and 15.1:1 on --white for --text; 5.1:1 and
+     * 4.9:1 for --text-muted. Both clear WCAG AA at body size, which is why
+     * --gray-500 is not a text colour anywhere below -- it is 3.2:1 and is
+     * used for rules, dots and swatch borders only.
+     */
+    --text: #0b0b0c;
+    --text-muted: var(--gray-600);
+    --text-on-dark: #f1efea;
+    --text-on-dark-muted: #a8a49b;
+
+    /* The one emphatic colour in the system, and it is a dark grey. */
+    --accent: #141414;
+    --accent-hover: #000000;
+    --accent-text: var(--page-bg);
+
+    --border: var(--gray-300);
+    --border-strong: var(--gray-400);
+
+    /* Messages only. Never a background, never a border on anything else. */
+    --ok-bg: #ecf6ee;
+    --ok-border: #c8e2ce;
+    --ok-text: #2c6438;
+    --err-bg: #fbeceb;
+    --err-border: #eccbc8;
+    --err-text: #8c2b26;
+
+    /* --------------------------------------------------------- typography */
+
+    /*
+     * Cairo and Anton, self-hosted with font-display: swap by hero.css. Named
+     * again here so a new section does not have to know which file declared
+     * --font-body, and so the fallback stack is stated once.
+     */
+    --font-sans: var(--font-body, 'Cairo', system-ui, -apple-system, 'Segoe UI', sans-serif);
+
+    /*
+     * --font-display is NOT redeclared here, and the first draft of this file got
+     * that wrong. It said:
+     *
+     *     --font-display: var(--font-display, 'Anton', ...);
+     *
+     * which is a custom property referring to itself -- a cycle, invalid at
+     * computed-value time. It appeared to work only because hero.css declares the
+     * same name on :root afterwards and simply overwrote it. A token that is
+     * broken and invisible because something else happens to win is worse than no
+     * token. hero.css owns --font-display, beside the @font-face rule that loads
+     * Anton; use it directly.
+     *
+     * --font-sans above is a different name from --font-body, so it is an alias
+     * rather than a cycle: it resolves when an element computes, by which point
+     * hero.css has declared --font-body on :root.
+     */
+
+    /*
+     * Two weights, not three. The shop ships cairo-400 and cairo-900 and
+     * nothing between them; asking for 500 or 700 would have the browser
+     * synthesise a weight, which on Arabic letterforms thickens the joins and
+     * looks like a rendering fault rather than a choice.
+     */
+    --weight-regular: 400;
+    --weight-bold: 900;
+
+    --fs-display: clamp(34px, 5.2vw, 64px);
+    --fs-h1: clamp(28px, 4vw, 48px);
+    --fs-h2: clamp(23px, 2.9vw, 36px);
+    --fs-h3: clamp(18px, 1.5vw, 22px);
+    --fs-body: clamp(15px, 1.05vw, 17px);
+    --fs-small: 14px;
+    --fs-caption: 12px;
+
+    /* 1.7 for running Arabic, which needs the room for its diacritics; 1.15
+       for the large headings, where 1.7 would fall apart into separate lines. */
+    --leading-body: 1.7;
+    --leading-tight: 1.15;
+    --tracking-eyebrow: 0.14em;
+
+    /* ------------------------------------------------------------ spacing */
+
+    /* A 4px scale. Nothing in the new CSS states a length outside it. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+    --space-9: 96px;
+    --space-10: 128px;
+
+    /*
+     * 1280px as asked. The catalogue's own shell is 1440px and stays that way
+     * -- it is the product grid's container and moving it would reflow the
+     * cards -- so this is the measure for the home page's sections only.
+     */
+    --container: 1280px;
+    --gutter: var(--space-4);
+
+    /* One rhythm for the whole home page: every section is this far apart. */
+    --section-gap: var(--space-8);
+
+    /* --------------------------------------------- radius, shadow, motion */
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 24px;
+    --radius-pill-token: 999px;
+
+    /* Two levels. A third would be a decision nobody can make consistently. */
+    --shadow-sm: 0 1px 2px rgba(11, 11, 12, 0.04), 0 2px 8px rgba(11, 11, 12, 0.04);
+    --shadow-md: 0 4px 12px rgba(11, 11, 12, 0.06), 0 12px 32px rgba(11, 11, 12, 0.07);
+
+    --dur-fast: 200ms;   /* every hover, focus and press */
+    --dur-slow: 600ms;   /* the one reveal an element gets on scroll */
+    --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+    /* Touch targets. 44px is the floor, and it is the floor on desktop too. */
+    --tap: 44px;
+
+    /* Cairo 700 ships for the dashboard only; its @font-face is in admin.css. */
+    --weight-semibold: 700;
+}
+
+/*
+ * THE DASHBOARD
+ *
+ * The admin panel's own palette: white, black and one purple, after the FINNOVA
+ * reference in design/reference/. It lives here rather than in admin.css so the
+ * whole system is still one file -- but no storefront rule reads it, and no
+ * storefront token is pointed at it. admin.css aliases its --admin-* names onto
+ * these, and that is the only door in.
+ *
+ * Every pairing that carries text was measured: --c-ink-2 is 4.70:1 on
+ * --c-surface-2, --c-night-ink-2 5.85:1 on --c-night-2, white 5.92:1 on the
+ * accent and at least 4.73:1 anywhere on the gradient. --c-danger is 5.11:1 on
+ * white but only 3.15:1 on --c-night, so on the dark panel it marks icons and
+ * large figures, never small text.
+ */
+:root {
+    --c-canvas: #f7f6fc;
+    --c-surface: #ffffff;
+    --c-surface-2: #f2f2fa;
+    --c-ink: #0e0e14;
+    --c-ink-2: #6b6b7b;
+    --c-line: #e8e8ef;
+    --c-night: #1d2033;
+    --c-night-2: #25273c;
+    --c-night-ink: #f5f5fa;
+    --c-night-ink-2: #a3a2b5;
+    --c-accent: #5546f2;
+    --c-accent-hover: #4537e0;
+    --c-accent-soft: #eceafe;
+    --c-danger: #cf2f35;
+    --g-accent: linear-gradient(135deg, #5546f2 0%, #6a5fea 55%, #6c62d9 100%);
+
+    /* White over the gradient. 0.12 is the ceiling: above it, white labels on
+       a tile drop under 4.5:1. */
+    --c-on-accent-tile: rgb(255 255 255 / 0.12);
+    --c-on-accent-line: rgb(255 255 255 / 0.32);
+    --c-on-accent-dim: rgb(255 255 255 / 0.86);
+
+    --r-panel: 28px;
+    --r-tile: 16px;
+    --r-concave: 18px;
+
+    --sh-accent: 0 8px 24px rgb(85 70 242 / 0.35);
+
+    --fs-emph: 16px;
+    --fs-card-title: 20px;
+    --fs-page-title: 28px;
+    --fs-figure: clamp(28px, 2.4vw, 36px);
+
+    --admin-max: 1440px;
+    --focus-ring: 2px solid var(--c-accent);
+    --focus-offset: 2px;
+
+    /*
+     * The orders panel. The list column's width is also where the notch starts,
+     * so the tabs sit over the seam between list and detail as in the reference.
+     * --notch-w is a default that fits the longest label; admin-notch.js widens
+     * it to the tabs' measured width.
+     */
+    --list-w: 380px;
+    --list-max-h: 720px;
+    --notch-start: calc(var(--list-w) + var(--space-5) * 2);
+    --notch-w: 360px;
+    --notch-h: 64px;
+}
+
+@media (min-width: 768px) {
+    :root {
+        --gutter: var(--space-6);
+        --section-gap: var(--space-9);
+    }
+}

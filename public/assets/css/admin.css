@@ -1,0 +1,2291 @@
+/*
+ * The admin panel: the dashboard palette, its shell, and its components.
+ *
+ * WHY THE VARIABLE NAMES STILL DID NOT CHANGE
+ *
+ * This screen has been repainted twice -- charcoal and yellow, then the
+ * storefront's warm grey -- and each time the --admin-* names were kept and
+ * repointed rather than replaced. They point at the dashboard block in
+ * tokens.css now (white, black, one purple; see design/reference/), so every
+ * older rule that says var(--admin-panel) moved with them and only literal
+ * values had to be found by hand.
+ *
+ * ONE STYLESHEET, BOTH DIRECTIONS
+ *
+ * Everything below is written in logical properties. The handful of values
+ * that have no logical form -- a transform-origin, a mirrored icon, the
+ * clip-path that cuts the notch -- are each one :dir(rtl) rule beside the rule
+ * it mirrors, never a second block of the same declarations.
+ *
+ * tokens.css is loaded ahead of this file by src/View/admin.php, so every value
+ * below is a reference into it and nothing here invents a colour.
+ */
+
+/*
+ * Cairo 700, for the dashboard's headings, buttons and figures. 400 and 900
+ * are declared by hero.css, which admin.php loads first; 700 is declared here
+ * because no storefront page uses it, so no storefront page should learn of
+ * it. Same files, same subsets, same pattern (@fontsource/cairo 5.3.0, the
+ * release the shipped 400 and 900 files match byte for byte).
+ */
+@font-face {
+    font-family: 'Cairo';
+    src: url('/assets/fonts/cairo-arabic-700-normal.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+@font-face {
+    font-family: 'Cairo';
+    src: url('/assets/fonts/cairo-latin-700-normal.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+:root {
+    --admin-bg: var(--c-canvas);
+    --admin-panel: var(--c-surface);
+    --admin-line: var(--c-line);
+    --admin-text: var(--c-ink);
+    --admin-dim: var(--c-ink-2);
+    /*
+     * The accent carries white text, so it is the one value here that also
+     * decides a foreground: --admin-on-accent is declared beside it rather
+     * than written into each rule, because the pair has to change together or
+     * a button goes unreadable.
+     */
+    --admin-accent: var(--c-accent);
+    --admin-on-accent: var(--c-surface);
+    --admin-danger: var(--c-danger);
+    --admin-sunken: var(--c-surface-2);
+
+    /*
+     * The top bar's height: the sticky previews on the slide and product
+     * editors sit under it, so it is stated once and read by both.
+     */
+    --admin-bar-h: calc(var(--tap) + var(--space-3) * 2);
+    --admin-gutter: var(--space-5);
+}
+
+@media (max-width: 767px) {
+    :root {
+        --admin-gutter: var(--space-4);
+    }
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body.admin {
+    background: var(--admin-bg);
+    color: var(--admin-text);
+    /* Cairo, from hero.css, which admin.php loads first. The panel is read in
+       Arabic and English, and Cairo carries both scripts at one set of metrics. */
+    font-family: var(--font-sans, system-ui, 'Segoe UI', sans-serif);
+    font-size: var(--fs-small);
+    line-height: 1.5;
+}
+
+/* Arabic needs the room for its marks; Latin at 1.7 looks double-spaced. */
+body.admin:lang(ar) {
+    line-height: var(--leading-body);
+}
+
+body.admin--centred {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+}
+
+code {
+    font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+    font-size: 12px;
+    background: var(--admin-sunken);
+    border: 1px solid var(--admin-line);
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+
+/* ---------------------------------------------------------------- basics */
+
+.visually-hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.skip-link {
+    position: absolute;
+    inset-block-start: calc(var(--space-10) * -1);
+    inset-inline-start: var(--space-4);
+    z-index: 300;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-night);
+    color: var(--c-night-ink);
+    text-decoration: none;
+}
+
+.skip-link:focus {
+    inset-block-start: var(--space-2);
+}
+
+.admin__content:focus {
+    outline: none;
+}
+
+/* One ring for every control: 2px accent, 2px off the edge. On the dark panel
+   and the gradient card the accent is too close to the ground to see, so the
+   ring turns white there. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+}
+
+.night-panel :focus-visible,
+.order-detail :focus-visible {
+    outline-color: var(--c-night-ink);
+}
+
+.icon {
+    inline-size: 20px;
+    block-size: 20px;
+    flex: none;
+}
+
+/* Icons that point along the reading direction are drawn for LTR and turned
+   round for RTL. Everything else is never flipped -- see admin_icon(). */
+.icon--dir:dir(rtl) {
+    scale: -1 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* --------------------------------------------------------------- top bar */
+
+.topbar {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    min-block-size: var(--admin-bar-h);
+    padding-block: var(--space-3);
+    padding-inline: max(var(--admin-gutter), (100% - var(--admin-max)) / 2 + var(--admin-gutter));
+    background: var(--c-canvas);
+}
+
+.topbar__brand {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    flex: none;
+    color: var(--c-ink);
+    text-decoration: none;
+    font-weight: var(--weight-bold);
+}
+
+.topbar__brand .brand__logo {
+    display: block;
+    block-size: 24px;
+    inline-size: auto;
+}
+
+/* The sections scroll inside their own pill when they do not fit: on a phone,
+   and on a 1024px screen in English. The page itself never scrolls sideways. */
+.topbar__nav {
+    min-inline-size: 0;
+    flex: 0 1 auto;
+    margin-inline: auto;
+}
+
+.topbar__sections {
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    list-style: none;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-night);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.topbar__link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-pill-token);
+    color: var(--c-night-ink-2);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.topbar__link:hover {
+    color: var(--c-night-ink);
+    background: var(--c-night-2);
+}
+
+.topbar__link[aria-current='page'] {
+    background: var(--c-accent);
+    color: var(--c-surface);
+    font-weight: var(--weight-semibold);
+}
+
+.topbar__link:focus-visible {
+    outline-color: var(--c-night-ink);
+    outline-offset: -4px;
+}
+
+.topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+}
+
+.lang-switch {
+    display: flex;
+    list-style: none;
+    padding: 2px;
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+}
+
+.lang-switch__item {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: calc(var(--tap) - 6px);
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-pill-token);
+    color: var(--c-ink-2);
+    text-decoration: none;
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-semibold);
+}
+
+.lang-switch__item[aria-current] {
+    background: var(--c-night);
+    color: var(--c-night-ink);
+}
+
+.lang-switch a.lang-switch__item:hover {
+    color: var(--c-ink);
+}
+
+@media (max-width: 767px) {
+    .topbar {
+        flex-wrap: wrap;
+        position: static;
+    }
+
+    .topbar__actions {
+        margin-inline-start: auto;
+    }
+
+    /* The sections take their own row, full width, below logo and actions. */
+    .topbar__nav {
+        order: 3;
+        flex: 1 0 100%;
+        margin-inline: 0;
+    }
+}
+
+.admin__bar-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin__body {
+    padding: var(--admin-gutter);
+    max-inline-size: var(--admin-max);
+    margin-inline: auto;
+}
+
+.admin__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.admin__body h1 {
+    font-size: 19px;
+}
+
+.admin__body h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+}
+
+.inline {
+    display: inline;
+}
+
+.hint {
+    color: var(--admin-dim);
+    margin-bottom: 12px;
+    line-height: 1.9;
+}
+
+.hint--tight {
+    margin: 0;
+    font-size: 12px;
+}
+
+/* ------------------------------------------------------------------ atoms */
+
+/*
+ * Buttons are pills, 44px tall everywhere: primary (the accent, once per
+ * screen), secondary (white), ghost, danger, and two for the gradient card.
+ * The older pages get the same pill by keeping .button; nothing there changes
+ * its markup.
+ */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding-inline: var(--space-4);
+    background: var(--c-surface);
+    color: var(--admin-text);
+    border: 1px solid var(--admin-line);
+    border-radius: var(--radius-pill-token);
+    font: inherit;
+    font-weight: var(--weight-semibold);
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease),
+        color var(--dur-fast) var(--ease);
+}
+
+.button:hover {
+    border-color: var(--admin-dim);
+}
+
+.button:active {
+    translate: 0 1px;
+}
+
+.button:disabled,
+.button[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    translate: none;
+}
+
+.button--primary {
+    background: var(--admin-accent);
+    border-color: var(--admin-accent);
+    color: var(--admin-on-accent);
+    box-shadow: var(--sh-accent);
+}
+
+.button--primary:hover {
+    background: var(--c-accent-hover);
+    border-color: var(--c-accent-hover);
+}
+
+.button--secondary {
+    background: var(--c-surface);
+}
+
+.button--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--c-ink-2);
+}
+
+.button--ghost:hover {
+    color: var(--c-ink);
+    border-color: var(--c-line);
+}
+
+.button--danger {
+    color: var(--admin-danger);
+}
+
+.button--danger:hover {
+    border-color: var(--admin-danger);
+}
+
+/* On the gradient: a white pill with ink text, and a quiet outline one. */
+.button--on-accent {
+    background: var(--c-surface);
+    border-color: var(--c-surface);
+    color: var(--c-ink);
+}
+
+.button--on-accent:hover {
+    background: var(--c-accent-soft);
+    border-color: var(--c-accent-soft);
+}
+
+.button--on-accent-quiet {
+    background: transparent;
+    border-color: var(--c-on-accent-line);
+    color: var(--c-surface);
+}
+
+.button--on-accent-quiet:hover {
+    background: var(--c-on-accent-tile);
+    border-color: var(--c-surface);
+}
+
+.icon-button {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    flex: none;
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+    color: var(--c-ink);
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.icon-button:hover {
+    border-color: var(--c-ink-2);
+}
+
+.icon-button--on-accent {
+    background: transparent;
+    border-color: var(--c-on-accent-line);
+    color: var(--c-surface);
+}
+
+.icon-button--on-accent:hover {
+    background: var(--c-on-accent-tile);
+    border-color: var(--c-surface);
+}
+
+.avatar {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    flex: none;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-night-2);
+    color: var(--c-night-ink);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-semibold);
+    line-height: 1;
+}
+
+.avatar--accent {
+    background: var(--c-accent);
+    color: var(--c-surface);
+}
+
+.avatar--light {
+    background: var(--c-surface);
+    color: var(--c-ink);
+}
+
+.panel {
+    background: var(--admin-panel);
+    border: 1px solid var(--admin-line);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.panel--narrow {
+    width: min(360px, 92vw);
+    display: grid;
+    gap: 14px;
+}
+
+.panel--narrow h1 {
+    font-size: 18px;
+}
+
+/* Three colour families only: a confirmation is the accent's soft tint, an
+   error is the one red. The storefront's green --ok-* stays the storefront's. */
+.alert {
+    border-radius: var(--r-tile);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: 16px;
+}
+
+.alert ul {
+    margin-block: 6px 0;
+    margin-inline: 18px;
+}
+
+.alert--error {
+    background: var(--c-surface);
+    border: 1px solid var(--c-danger);
+    color: var(--c-danger);
+}
+
+.alert--ok {
+    background: var(--c-accent-soft);
+    border: 1px solid var(--c-accent-soft);
+    color: var(--c-ink);
+}
+
+.field {
+    display: grid;
+    gap: 5px;
+    margin-bottom: 14px;
+}
+
+.field > span {
+    color: var(--admin-dim);
+    font-size: 12px;
+}
+
+/*
+ * Checkbox rows that wrap: the colour and size pickers on the product form.
+ * Nothing new in the palette or the spacing scale -- it only lays out boxes
+ * the panel already styles.
+ */
+.options-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin-top: 6px;
+}
+
+.options-grid .field--check {
+    margin: 0;
+}
+
+.field--check {
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: center;
+    gap: 8px;
+}
+
+.field__row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.field__row input[type='text'] {
+    flex: 1;
+    min-width: 0;
+}
+
+input[type='text'],
+input[type='password'],
+input[type='number'],
+select,
+textarea {
+    background: var(--admin-sunken);
+    color: var(--admin-text);
+    border: 1px solid var(--admin-line);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font: inherit;
+    width: 100%;
+}
+
+textarea {
+    resize: vertical;
+}
+
+input[type='color'] {
+    background: var(--admin-sunken);
+    border: 1px solid var(--admin-line);
+    border-radius: 6px;
+    width: 44px;
+    height: 36px;
+    padding: 3px;
+    cursor: pointer;
+    flex: none;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 1px;
+}
+
+fieldset {
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 18px;
+}
+
+.product-images__upload {
+    border: 1px dashed var(--admin-dim);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.product-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+}
+
+.product-image {
+    min-width: 0;
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.product-image > img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.product-editor {
+    display: grid;
+    grid-template-columns: minmax(340px, 0.8fr) minmax(0, 1.2fr);
+    gap: 20px;
+    align-items: start;
+    margin-top: 18px;
+}
+
+.product-model-editor {
+    position: sticky;
+    top: calc(var(--admin-bar-h) + var(--space-2));
+}
+
+.product-model-editor__head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.product-model-editor__head h2 {
+    margin: 0 0 4px;
+}
+
+.product-model-editor__color {
+    display: grid;
+    gap: 5px;
+    color: var(--admin-dim);
+    font-size: 11px;
+}
+
+.product-model-editor__color input {
+    width: 48px;
+    height: 36px;
+}
+
+.product-model-editor__stage {
+    position: relative;
+    min-height: 540px;
+    height: min(62vh, 680px);
+    overflow: hidden;
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    background: var(--page-bg);
+}
+
+.product-model-editor__stage canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+.product-model-editor__status {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    z-index: 1;
+    width: min(280px, 80%);
+    margin: 0;
+    color: var(--text-muted);
+    text-align: center;
+    transform: translate(-50%, -50%);
+}
+
+.product-model-editor__views {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.product-artwork {
+    margin-bottom: 12px;
+}
+
+.product-artwork__drop {
+    justify-content: center;
+    min-height: 112px;
+    padding: 14px;
+    border: 1px dashed var(--admin-dim);
+    border-radius: 8px;
+}
+
+.product-layers {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 10px;
+}
+
+.product-layer {
+    display: grid;
+    grid-template-rows: 70px auto;
+    gap: 5px;
+    width: 82px;
+    flex: 0 0 82px;
+    padding: 5px;
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    background: var(--admin-panel);
+    color: inherit;
+    cursor: pointer;
+}
+
+.product-layer.is-active {
+    border-color: var(--admin-accent);
+    outline: 1px solid var(--admin-accent);
+}
+
+.product-layer img {
+    width: 100%;
+    height: 70px;
+    object-fit: contain;
+    border-radius: 5px;
+    background: var(--white);
+}
+
+.product-layer span {
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.product-placement {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--admin-line);
+}
+
+.product-placement__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.product-placement__control {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.product-placement__control input {
+    width: 100%;
+}
+
+.product-placement__control select {
+    width: 100%;
+}
+
+.product-placement__control output {
+    color: var(--admin-accent);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1050px) {
+    .product-editor {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .product-model-editor {
+        position: static;
+    }
+
+    .product-model-editor__stage {
+        min-height: 420px;
+        height: 56vh;
+    }
+}
+
+legend {
+    padding: 0 8px;
+    color: var(--admin-accent);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.table th,
+.table td {
+    text-align: start;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--admin-line);
+    vertical-align: middle;
+}
+
+.table th {
+    color: var(--admin-dim);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* ------------------------------------------------------------- slide list */
+
+.slides {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+}
+
+.slides.is-saved {
+    outline: 1px solid var(--admin-accent);
+    outline-offset: 6px;
+    border-radius: 4px;
+}
+
+.slide {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--admin-panel);
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: grab;
+}
+
+.slide.is-dragging {
+    opacity: 0.45;
+}
+
+.slide__grip {
+    color: var(--admin-dim);
+    font-size: 18px;
+    letter-spacing: -2px;
+}
+
+.slide__swatch {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1px solid var(--admin-line);
+    flex: none;
+    vertical-align: -5px;
+}
+
+.slide__title {
+    flex: 1;
+    display: grid;
+}
+
+.slide__title small {
+    color: var(--admin-dim);
+    font-size: 11px;
+}
+
+.slide__actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--admin-line);
+    color: var(--admin-dim);
+}
+
+.badge--on {
+    color: var(--c-accent);
+    border-color: var(--c-accent-soft);
+    background: var(--c-accent-soft);
+}
+
+/* ----------------------------------------------------------- slide editor */
+
+.editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 430px;
+    gap: 20px;
+    padding: 20px;
+    align-items: start;
+}
+
+@media (max-width: 1150px) {
+    .editor {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.editor__preview {
+    position: sticky;
+    top: calc(var(--admin-bar-h) + var(--space-2));
+}
+
+.editor__preview-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+/*
+ * The preview frame.
+ *
+ * The frame is laid out at the device's width and painted at whatever fraction
+ * of it fits the column. transform does not touch layout, so the document
+ * inside is a 1440px-wide document however small it is drawn -- which is the
+ * whole point: its media queries, its container queries and the notch geometry
+ * all resolve against 1440.
+ *
+ * The wrapper is what the page flows around, so it is given the PAINTED height
+ * by admin-hero.js; without that it would reserve the full unscaled height and
+ * leave a column of empty space under the frame.
+ */
+.preview-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    background: var(--paper);
+}
+
+.preview-frame {
+    display: block;
+    border: 0;
+    width: 1440px;
+    height: 900px;
+    /* inline-start, not left: the panel is right-to-left, and an origin on the
+       wrong side would scale the frame away from the column it sits in. */
+    transform-origin: top left;
+}
+
+.preview-frame:dir(rtl) {
+    transform-origin: top right;
+}
+
+/* Two states, one look: the pressed one is the one in force. */
+.switch {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--page-bg-muted);
+}
+
+.switch__button {
+    border: 0;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+}
+
+.switch__button[aria-pressed='true'] {
+    background: var(--admin-accent);
+    color: var(--admin-on-accent);
+    font-weight: 700;
+}
+
+.switch__note {
+    opacity: 0.6;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+ * No height of its own. The preview renders the component under the component's
+ * own rules; a second set of layout numbers here is exactly what made what the
+ * administrator dragged land somewhere else on the site.
+ */
+
+.editor__form-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.editor__form {
+    max-height: calc(100vh - var(--admin-bar-h) - var(--space-6));
+    overflow-y: auto;
+}
+
+.stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 10px;
+}
+
+/*
+ * The canvas sits above the back layer, so it would swallow any drag aimed at
+ * the wordmark behind the garment. Nothing in the editor needs to click the
+ * scene, so the whole stage goes inert.
+ */
+.hero-editor .hero__stage {
+    pointer-events: none;
+}
+
+.hero-editor .is-handle {
+    pointer-events: auto;
+    cursor: grab;
+    outline: 1px dashed rgba(17, 17, 19, 0.4);
+    outline-offset: 6px;
+    touch-action: none;
+}
+
+.hero-editor .is-handle:hover {
+    outline-style: solid;
+}
+
+.hero-editor .is-handle.is-dragging {
+    cursor: grabbing;
+    outline: 2px solid var(--admin-accent);
+}
+
+/* ------------------------------------------- the home page's settings screen */
+
+/*
+ * /admin/home.php. Built from this file's own --admin-* tokens rather than from
+ * tokens.css, so the screen is the same panel as every other admin screen: the
+ * charcoal surface, the yellow focus ring, the same borders. tokens.css is the
+ * STOREFRONT's palette and mixing the two here would give one admin screen a
+ * different skin from the six beside it.
+ */
+
+.home-admin__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+.home-admin__field {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+.home-admin__label {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/*
+ * The preview box keeps its exact size whether it holds a picture or the "no
+ * image" note, so choosing a file does not shift the two fields beside it. 16:10
+ * is a compromise between the 4:5 category cards and the wide banner -- both are
+ * shown contained rather than cropped, because the point of this box is to confirm
+ * WHICH image is stored, not to reproduce how it will be cropped on the page.
+ */
+.home-admin__preview {
+    aspect-ratio: 16 / 10;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--admin-bg);
+    border: 1px solid var(--admin-line);
+    border-radius: 10px;
+}
+
+.home-admin__preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.home-admin__empty {
+    padding: 12px;
+    color: var(--admin-dim);
+    font-size: 12px;
+    text-align: center;
+}
+
+.home-admin__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+}
+
+.home-admin__table th,
+.home-admin__table td {
+    padding: 10px 12px;
+    text-align: start;
+    border-bottom: 1px solid var(--admin-line);
+    vertical-align: middle;
+}
+
+.home-admin__table thead th {
+    color: var(--admin-dim);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.home-admin__table tbody tr:last-child th,
+.home-admin__table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.home-admin__muted {
+    color: var(--admin-dim);
+}
+
+.home-admin__order {
+    width: 5rem;
+    padding: 6px 8px;
+    color: var(--admin-text);
+    background: var(--admin-bg);
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    font: inherit;
+}
+
+.home-admin__order:focus-visible,
+.home-admin__table input[type='checkbox']:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 2px;
+}
+
+/* 18px, so the tick is a comfortable target in a dense table row. */
+.home-admin__table input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--admin-accent);
+    cursor: pointer;
+}
+
+@media (max-width: 640px) {
+    /*
+     * The type column is what a narrow screen can lose: the product name above it
+     * already implies the cut, and dropping it keeps the tick box, the order and
+     * the status -- the three things this table exists to edit -- on one row
+     * instead of forcing a sideways scroll to reach them.
+     */
+    .home-admin__table th:nth-child(3),
+    .home-admin__table td:nth-child(3) {
+        display: none;
+    }
+}
+
+/* =================================================================
+ * THE DASHBOARD COMPONENTS
+ *
+ * One block per partial in src/View/admin/. Pages compose these and add
+ * only their own layout (the orders split at the end).
+ * ================================================================= */
+
+.dash {
+    display: grid;
+    gap: var(--space-5);
+    max-inline-size: var(--admin-max);
+    margin-inline: auto;
+    padding-inline: var(--admin-gutter);
+    padding-block: var(--space-3) var(--space-7);
+}
+
+.dash .alert {
+    margin: 0;
+}
+
+/* ---------------------------------------------------------- page header */
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.page-header__text {
+    flex: 1 1 16rem;
+    min-inline-size: 0;
+}
+
+.page-header__title {
+    font-size: var(--fs-page-title);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+}
+
+.page-header__subtitle {
+    margin-block-start: var(--space-1);
+    color: var(--c-ink-2);
+}
+
+.page-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* ------------------------------------------------------------ stat cards */
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    padding: var(--space-5);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.stat-card__label {
+    font-size: var(--fs-small);
+    font-weight: var(--weight-semibold);
+}
+
+.stat-card__icon {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 36px;
+    block-size: 36px;
+    flex: none;
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-pill-token);
+    color: var(--c-accent);
+}
+
+.stat-card__icon .icon {
+    inline-size: 18px;
+    block-size: 18px;
+}
+
+/* Proportional figures at this size: tabular digits look loose in a lone number. */
+.stat-card__figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-2);
+    margin-block-start: var(--space-2);
+    font-size: var(--fs-figure);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+}
+
+.stat-card__unit {
+    font-size: var(--fs-emph);
+    font-weight: var(--weight-regular);
+    color: var(--c-ink-2);
+}
+
+.stat-card__trend,
+.stat-card__note {
+    font-size: var(--fs-caption);
+    color: var(--c-ink-2);
+}
+
+/* Up is the accent, not green; down is the one red. The arrow and the words
+   carry the direction, so colour is never alone. */
+.stat-card__trend--up .stat-card__arrow {
+    color: var(--c-accent);
+}
+
+.stat-card__trend--down .stat-card__arrow {
+    color: var(--c-danger);
+}
+
+.stat-card__arrow {
+    font-weight: var(--weight-bold);
+    margin-inline-end: 2px;
+}
+
+/*
+ * The bars: one series, a flex row so the days run in the reading direction,
+ * at most 24px thick with a 4px rounded data end and a square base. Today is
+ * the solid accent, the rest its soft tint.
+ */
+.stat-card__bars {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-1);
+    block-size: 56px;
+    margin-block-start: auto;
+    padding-block-start: var(--space-3);
+    list-style: none;
+}
+
+.stat-card__bar {
+    position: relative;
+    flex: 1 1 0;
+    max-inline-size: 24px;
+    block-size: max(3px, calc(var(--bar) * 100%));
+    border-start-start-radius: 4px;
+    border-start-end-radius: 4px;
+    background: var(--c-accent-soft);
+}
+
+.stat-card__bar.is-current {
+    background: var(--c-accent);
+}
+
+.stat-card__bar:hover {
+    background: var(--c-accent-hover);
+}
+
+.stat-card__bar:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    inset-block-end: calc(100% + var(--space-2));
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    z-index: 5;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--c-night);
+    color: var(--c-night-ink);
+    font-size: var(--fs-caption);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* translate has no logical form; centring on the inline-start inset needs the
+   opposite shift in RTL. */
+.stat-card__bar:dir(rtl):hover::after {
+    translate: 50% 0;
+}
+
+/* ------------------------------------------------------------ filter bar */
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.filter-bar__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--weight-semibold);
+    margin-inline-end: var(--space-2);
+}
+
+.count-badge {
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 24px;
+    block-size: 24px;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+    font-variant-numeric: tabular-nums;
+}
+
+.count-badge--on {
+    background: var(--c-night);
+    color: var(--c-night-ink);
+}
+
+.pill-field {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding-inline: var(--space-4) var(--space-3);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+    color: var(--c-ink-2);
+    cursor: text;
+}
+
+.pill-field:focus-within {
+    border-color: var(--c-accent);
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+}
+
+.pill-field__label {
+    font-size: var(--fs-caption);
+    white-space: nowrap;
+}
+
+.pill-field input {
+    min-inline-size: 0;
+    inline-size: 100%;
+    min-block-size: calc(var(--tap) - 2px);
+    border: 0;
+    background: transparent;
+    color: var(--c-ink);
+    font: inherit;
+}
+
+.pill-field input:focus-visible {
+    outline: none;
+}
+
+.pill-field--search {
+    flex: 1 1 18rem;
+}
+
+.filter-bar__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* ------------------------------------------------------- the dark panel */
+
+.night-panel {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    gap: var(--space-3);
+    color: var(--c-night-ink);
+}
+
+/*
+ * The fallback, and the phone layout: the tabs are a white pill row on the
+ * canvas, the dark ground is a plain rounded panel under them. The backdrop
+ * layer is not drawn at all; the body carries the colour.
+ */
+.night-panel__bg {
+    display: none;
+}
+
+.night-panel__body {
+    min-inline-size: 0;
+    padding: var(--space-5);
+    border-radius: var(--r-panel);
+    background: var(--c-night);
+}
+
+.night-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-block-end: var(--space-4);
+}
+
+.night-panel__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-emph);
+    font-weight: var(--weight-semibold);
+}
+
+.night-panel__count {
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 28px;
+    block-size: 28px;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-night-2);
+    color: var(--c-night-ink-2);
+    font-size: var(--fs-caption);
+}
+
+.night-panel__tools {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.tabs {
+    display: flex;
+    gap: var(--space-1);
+    inline-size: max-content;
+    max-inline-size: 100%;
+    padding: var(--space-1);
+    list-style: none;
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.tabs__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding-inline: var(--space-4) var(--space-2);
+    border-radius: var(--radius-pill-token);
+    color: var(--c-ink-2);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.tabs__tab:hover {
+    color: var(--c-ink);
+    background: var(--c-surface-2);
+}
+
+.tabs__tab[aria-current='page'] {
+    background: var(--c-accent);
+    color: var(--c-surface);
+    box-shadow: var(--sh-accent);
+}
+
+.tabs__count {
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 26px;
+    block-size: 26px;
+    padding-inline: 6px;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    color: var(--c-ink);
+    font-size: var(--fs-caption);
+    font-variant-numeric: tabular-nums;
+}
+
+.tabs__tab[aria-current='page'] .tabs__count {
+    background: var(--c-surface);
+    color: var(--c-accent);
+}
+
+/*
+ * THE NOTCH
+ *
+ * One shape() path on the empty backdrop layer: the panel's rounded corners
+ * and a hole in its top edge, with every corner of the hole rounded by
+ * --r-concave. The two top corners of the hole are the inverted ones -- the
+ * dark ground turns down into the notch on a curve -- and the two bottom ones
+ * round the floor of the hole.
+ *
+ * Drawn once, for left-to-right; RTL mirrors the layer, which holds no text.
+ * --notch-x keeps the hole clear of the panel's own corner when the panel is
+ * narrow; the tabs use the same expression, so hole and tabs agree.
+ *
+ * Only where shape() exists and the screen is wide enough for a notch. Note
+ * that :dir() and scale are supported by every engine that has shape().
+ */
+@supports (clip-path: shape(from 0 0, line to 1px 1px)) {
+    @media (min-width: 768px) {
+        .night-panel {
+            --notch-x: min(var(--notch-start), 100% - var(--notch-w) - var(--r-panel) - var(--r-concave));
+            gap: 0;
+        }
+
+        .night-panel__bg {
+            display: block;
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background: var(--c-night);
+            clip-path: shape(
+                from var(--r-panel) 0,
+                hline to calc(var(--notch-x) - var(--r-concave)),
+                arc to var(--notch-x) var(--r-concave) of var(--r-concave) cw,
+                vline to calc(var(--notch-h) - var(--r-concave)),
+                arc to calc(var(--notch-x) + var(--r-concave)) var(--notch-h) of var(--r-concave) ccw,
+                hline to calc(var(--notch-x) + var(--notch-w) - var(--r-concave)),
+                arc to calc(var(--notch-x) + var(--notch-w)) calc(var(--notch-h) - var(--r-concave)) of var(--r-concave) ccw,
+                vline to var(--r-concave),
+                arc to calc(var(--notch-x) + var(--notch-w) + var(--r-concave)) 0 of var(--r-concave) cw,
+                hline to calc(100% - var(--r-panel)),
+                arc to 100% var(--r-panel) of var(--r-panel) cw,
+                vline to calc(100% - var(--r-panel)),
+                arc to calc(100% - var(--r-panel)) 100% of var(--r-panel) cw,
+                hline to var(--r-panel),
+                arc to 0 calc(100% - var(--r-panel)) of var(--r-panel) cw,
+                vline to var(--r-panel),
+                arc to var(--r-panel) 0 of var(--r-panel) cw,
+                close
+            );
+        }
+
+        .night-panel__bg:dir(rtl) {
+            scale: -1 1;
+        }
+
+        .night-panel__body {
+            background: none;
+            border-radius: 0;
+        }
+
+        /* The head is as tall as the notch, so the title sits level with the
+           tabs and nothing below runs into the hole. */
+        .night-panel__head {
+            min-block-size: calc(var(--notch-h) - var(--space-5));
+        }
+
+        .night-panel__tabs {
+            position: absolute;
+            inset-block-start: 0;
+            inset-inline-start: var(--notch-x);
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            inline-size: var(--notch-w);
+            block-size: var(--notch-h);
+            padding-block-start: 0;
+        }
+
+        .night-panel__tabs .tabs {
+            align-self: flex-start;
+            max-inline-size: 100%;
+        }
+    }
+}
+
+/* ------------------------------------------------------------ list rows */
+
+.order-list {
+    display: grid;
+    gap: var(--space-1);
+    list-style: none;
+}
+
+.order-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: 64px;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--r-tile);
+    color: var(--c-night-ink);
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease);
+}
+
+.order-row:hover {
+    background: var(--c-night-2);
+}
+
+.order-row.is-selected {
+    background: var(--c-accent);
+}
+
+.order-row.is-selected .avatar {
+    background: var(--c-surface);
+    color: var(--c-ink);
+}
+
+.order-row.is-selected .order-row__meta {
+    color: var(--c-on-accent-dim);
+}
+
+.order-row.is-selected .chip {
+    background: var(--c-surface);
+    color: var(--c-ink);
+}
+
+.order-row__main {
+    display: grid;
+    min-inline-size: 0;
+}
+
+.order-row__id {
+    font-weight: var(--weight-semibold);
+}
+
+.order-row__meta {
+    display: flex;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    color: var(--c-night-ink-2);
+    font-size: var(--fs-caption);
+    white-space: nowrap;
+}
+
+.order-row__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.order-row__total {
+    font-weight: var(--weight-semibold);
+    text-align: end;
+    white-space: nowrap;
+}
+
+/* Below a comfortable row width the status moves under the total. */
+@media (max-width: 479px) {
+    .order-row {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        row-gap: var(--space-1);
+    }
+
+    .order-row .avatar,
+    .order-row__main {
+        grid-row: span 2;
+    }
+
+    .order-row .chip {
+        grid-column: 3;
+        justify-self: end;
+    }
+}
+
+/* ----------------------------------------------------------------- chips */
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px var(--space-3);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-night-2);
+    color: var(--c-night-ink);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+.chip::before {
+    content: '';
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: var(--radius-pill-token);
+    background: currentColor;
+    opacity: 0.55;
+}
+
+.chip--active::before {
+    background: var(--c-accent);
+    opacity: 1;
+}
+
+.chip--stopped::before {
+    background: var(--c-danger);
+    opacity: 1;
+}
+
+/* ------------------------------------------------------- the detail card */
+
+.order-detail {
+    position: relative;
+    display: grid;
+    gap: var(--space-5);
+    min-inline-size: 0;
+    padding: var(--space-5);
+    border-radius: var(--r-panel);
+    background: var(--g-accent);
+    color: var(--c-surface);
+}
+
+.order-detail:focus {
+    outline: none;
+}
+
+.order-detail a {
+    color: inherit;
+}
+
+.order-detail .chip {
+    background: var(--c-surface);
+    color: var(--c-ink);
+}
+
+.order-detail__close {
+    display: none;
+}
+
+.order-detail__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-4) var(--space-5);
+    align-items: start;
+}
+
+.fact {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-1);
+    min-inline-size: 0;
+}
+
+.fact__label {
+    color: var(--c-on-accent-dim);
+    font-size: var(--fs-caption);
+}
+
+.fact__value {
+    font-weight: var(--weight-semibold);
+}
+
+.fact__sub {
+    color: var(--c-on-accent-dim);
+    font-size: var(--fs-caption);
+}
+
+.order-detail__number {
+    font-size: var(--fs-page-title);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+}
+
+.person {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-inline-size: 0;
+}
+
+.person__text {
+    display: grid;
+    min-inline-size: 0;
+}
+
+.person__name {
+    font-weight: var(--weight-semibold);
+}
+
+.person__line {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--fs-caption);
+}
+
+.person__line a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 24px;
+    text-underline-offset: 3px;
+}
+
+.order-detail__ship {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.order-detail__ship .fact__label {
+    margin-inline-end: var(--space-2);
+}
+
+.order-detail__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--space-3);
+    list-style: none;
+}
+
+/* Translucent white on the gradient; 0.12 keeps white small text ≥ 4.5:1. */
+.tile {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    block-size: 100%;
+    padding: var(--space-4);
+    border-radius: var(--r-tile);
+    background: var(--c-on-accent-tile);
+}
+
+.tile__art {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.art {
+    display: grid;
+    gap: var(--space-1);
+    justify-items: center;
+}
+
+.art img,
+.art__plain {
+    display: block;
+    inline-size: 88px;
+    block-size: 88px;
+    border-radius: calc(var(--r-tile) - var(--space-1));
+    background: var(--c-surface);
+    object-fit: contain;
+}
+
+.art__plain {
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 1px var(--c-on-accent-line);
+}
+
+.art figcaption {
+    font-size: var(--fs-caption);
+    color: var(--c-on-accent-dim);
+}
+
+.tile__title {
+    font-weight: var(--weight-semibold);
+}
+
+.tile__kind,
+.tile__meta {
+    font-size: var(--fs-caption);
+    color: var(--c-on-accent-dim);
+}
+
+.tile__facts {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    gap: var(--space-4);
+}
+
+.tile__facts dt {
+    font-size: var(--fs-caption);
+    color: var(--c-on-accent-dim);
+}
+
+.tile__facts dd {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: var(--weight-semibold);
+}
+
+.swatch {
+    inline-size: 14px;
+    block-size: 14px;
+    flex: none;
+    border-radius: var(--radius-pill-token);
+    background: var(--swatch);
+    box-shadow: 0 0 0 1px var(--c-on-accent-line);
+}
+
+.tile__print {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-block-start: var(--space-1);
+}
+
+.tile__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-caption);
+}
+
+.tile__status .icon {
+    inline-size: 16px;
+    block-size: 16px;
+}
+
+.tile__meta {
+    flex-basis: 100%;
+}
+
+.tile--dashed {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: var(--space-2);
+    min-block-size: 160px;
+    border: 1.5px dashed var(--c-on-accent-line);
+    background: transparent;
+    color: var(--c-surface);
+    font-weight: var(--weight-semibold);
+    text-align: center;
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease);
+}
+
+.tile--dashed:hover {
+    background: var(--c-on-accent-tile);
+}
+
+.tile__dashed-icon {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    border-radius: var(--radius-pill-token);
+    border: 1px solid var(--c-on-accent-line);
+}
+
+.order-detail__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--c-on-accent-line);
+}
+
+.totals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
+}
+
+.totals dt {
+    font-size: var(--fs-caption);
+    color: var(--c-on-accent-dim);
+}
+
+.totals dd {
+    font-size: var(--fs-emph);
+    font-weight: var(--weight-semibold);
+}
+
+.totals__total dd {
+    font-size: var(--fs-card-title);
+}
+
+.order-detail__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* Navigating to another order: the card keeps its shape and shimmers until
+   the next page arrives (admin-ui.js sets aria-busy on click). */
+.order-detail[aria-busy='true'] > * {
+    visibility: hidden;
+}
+
+.order-detail[aria-busy='true']::after {
+    content: '';
+    position: absolute;
+    inset: var(--space-5);
+    border-radius: var(--r-tile);
+    background: linear-gradient(90deg, var(--c-on-accent-tile), rgb(255 255 255 / 0.22), var(--c-on-accent-tile));
+    background-size: 200% 100%;
+    animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+/* ---------------------------------------------------------------- money */
+
+.money {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.money__unit {
+    font-size: 0.78em;
+    font-weight: var(--weight-regular);
+    opacity: 0.8;
+}
+
+/* --------------------------------------------------------------- states */
+
+.state {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding: var(--space-7) var(--space-5);
+    text-align: center;
+    color: var(--c-ink-2);
+}
+
+.state--compact {
+    justify-items: start;
+    padding: var(--space-2) 0;
+    text-align: start;
+}
+
+.state__icon {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    color: var(--c-ink-2);
+}
+
+.state--error .state__icon {
+    color: var(--c-danger);
+}
+
+.state__text {
+    color: var(--c-ink);
+    font-weight: var(--weight-semibold);
+}
+
+.state__hint {
+    max-inline-size: 36ch;
+    font-size: var(--fs-caption);
+}
+
+.state--dark {
+    color: var(--c-night-ink-2);
+}
+
+.state--dark .state__icon {
+    background: var(--c-night-2);
+    color: var(--c-night-ink-2);
+}
+
+.state--dark .state__text {
+    color: var(--c-night-ink);
+}
+
+/* The skeleton look, for anything marked as loading. */
+.state--loading .state__text {
+    inline-size: 12rem;
+    block-size: 1em;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    color: transparent;
+}
+
+/* ------------------------------------------------------ the orders page */
+
+.orders-split {
+    display: grid;
+    grid-template-columns: var(--list-w) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+}
+
+.orders-split__list {
+    min-inline-size: 0;
+    max-block-size: var(--list-max-h);
+    overflow-y: auto;
+    scrollbar-color: var(--c-night-2) transparent;
+}
+
+.orders-split__detail {
+    min-inline-size: 0;
+}
+
+@media (max-width: 1199px) {
+    .stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .orders-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .orders-split__list {
+        max-block-size: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .stat-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3);
+    }
+
+    .night-panel__body {
+        padding: var(--space-3);
+    }
+
+    .order-row {
+        padding-inline: var(--space-2);
+    }
+
+    /*
+     * On a phone the detail is a full-height sheet, and only when an order
+     * was chosen. The desktop default -- the newest order, so the card is
+     * never empty -- would otherwise open a sheet nobody asked for.
+     */
+    .order-detail {
+        display: none;
+    }
+
+    .order-detail--explicit {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: grid;
+        align-content: start;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border-radius: 0;
+        padding: var(--space-4);
+        padding-block-start: calc(var(--space-4) + var(--tap) + var(--space-3));
+    }
+
+    .order-detail__close {
+        position: absolute;
+        inset-block-start: var(--space-4);
+        inset-inline-end: var(--space-4);
+        display: inline-grid;
+    }
+
+    .order-detail__items {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .filter-bar .pill-field {
+        flex: 1 1 100%;
+    }
+
+    .filter-bar__actions {
+        flex: 1 1 100%;
+    }
+
+    .filter-bar__actions .button {
+        flex: 1;
+    }
+}

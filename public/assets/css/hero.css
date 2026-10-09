@@ -1,0 +1,1206 @@
+/* Self-hosted so the page owes nothing to a third-party CDN. Anton and Cairo
+   are both SIL Open Font License; the licences sit beside the woff2 files. */
+
+@font-face {
+    font-family: 'Anton';
+    src: url('/assets/fonts/anton-latin-400-normal.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+@font-face {
+    font-family: 'Cairo';
+    src: url('/assets/fonts/cairo-arabic-400-normal.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+@font-face {
+    font-family: 'Cairo';
+    src: url('/assets/fonts/cairo-latin-400-normal.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+@font-face {
+    font-family: 'Cairo';
+    src: url('/assets/fonts/cairo-arabic-900-normal.woff2') format('woff2');
+    font-weight: 900;
+    font-display: swap;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+@font-face {
+    font-family: 'Cairo';
+    src: url('/assets/fonts/cairo-latin-900-normal.woff2') format('woff2');
+    font-weight: 900;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+:root {
+    --paper: #edebe6;
+    --card: #141414;
+    --ink: #0b0b0c;
+    --dim: #8a8a85;
+    --muted: #6d6a63;
+    --hazard: #e9c400;
+    --line: #d8d4cb;
+
+    --card-radius: 54px;
+    --hero-frame: clamp(12px, 1.8cqw, 24px);
+    /* The page frame's own padding, named so the hero can cancel it. */
+    --frame-pad: clamp(10px, 1.4vw, 20px);
+    /*
+     * Where the chrome starts and where the dark card starts: one number for
+     * both, measured from the page edge.
+     *
+     * The logo's own left edge, the card's left edge, the account icon's right
+     * edge, the card's right edge -- all four land on it, because the card is
+     * inset by this and the groups floating in its notches sit flush in their
+     * corners with no outer padding of their own. Written once, so the mark
+     * and the edge it sits on cannot drift apart.
+     */
+    --hero-edge: 56px;
+    /*
+     * The site header overlaps the card, and the dark surface starts below it.
+     * One declaration, read by both the header's height and the surface's inset,
+     * so the admin preview cannot render the component at a different offset
+     * from the site — which it did, by 5.4% of the card, when this value lived
+     * behind .has-hero and the preview fell back to the frame width.
+     */
+    --hero-topbar-height: clamp(70px, 7.5vw, 92px);
+    --hero-surface-top: var(--hero-topbar-height);
+    --surface-radius: calc(var(--card-radius) - var(--hero-frame) / 2);
+    --tab-width: 27%;
+    --tab-height: clamp(58px, 7cqw, 82px);
+    --tab-curve: calc(var(--surface-radius) * 2);
+    --tab-edge-curve: var(--surface-radius);
+
+    --font-body: 'Cairo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-display: 'Anton', 'Cairo', system-ui, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * There is no second background for the page that carries the hero.
+ *
+ * The card used to sit on a grey ground inside a paper-coloured box of its own,
+ * which read as a white panel wedged between the site and the hero -- and the
+ * notches cut out of the card now show whatever is behind it, so a colour that
+ * belongs to one page would show through the navigation on that page only.
+ * Every page is the same ground.
+ */
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ------------------------------------------------------- frame and top bar */
+
+.frame {
+    padding: var(--frame-pad);
+}
+
+.has-hero .frame {
+    position: relative;
+}
+
+/*
+ * The bar exists on every page except the one with the hero, which carries the
+ * same links in the card's own notches instead. The rules that used to float
+ * this over the card went with it.
+ */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: clamp(10px, 1.4vw, 18px) clamp(14px, 2.4vw, 40px);
+}
+
+/* ------------------------------------------------------------------ brand */
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    color: var(--ink);
+    text-decoration: none;
+    flex: none;
+}
+
+/* Height is fixed and width comes from the file's own ratio, both written on
+   the element, so the row has its final height before the image loads. */
+.brand__logo {
+    display: block;
+    height: 34px;
+    width: auto;
+}
+
+.brand--footer .brand__logo {
+    height: 26px;
+}
+
+/*
+ * Bigger in the hero's notch than in a top bar: the notch is a piece cut out
+ * of the card rather than a strip laid over it, and the mark has the room.
+ *
+ * Kept in step with Brand::HERO_HEIGHT, which is what writes the width and
+ * height attributes on the element -- 132x44, the file's own 2170:725 ratio --
+ * so the box is the box the image fills and nothing reflows when it lands.
+ */
+.brand--hero .brand__logo {
+    height: 44px;
+}
+
+.brand--hero .brand__wordmark {
+    font-size: clamp(24px, 2.5vw, 33px);
+    line-height: 44px;
+}
+
+/* Stands in until the logo file is added; see src/View/brand-mark.php. */
+.brand__wordmark {
+    font-family: var(--font-display);
+    font-size: clamp(19px, 2vw, 26px);
+    letter-spacing: 0.02em;
+    line-height: 34px;
+}
+
+.brand--footer .brand__wordmark {
+    font-size: 19px;
+    line-height: 26px;
+}
+
+.brand:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
+}
+
+.topbar__nav {
+    display: flex;
+    gap: clamp(14px, 2vw, 30px);
+    align-items: center;
+}
+
+.topbar__nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 6px 2px;
+    border-bottom: 2px solid transparent;
+}
+
+.topbar__nav a:hover,
+.topbar__nav a[aria-current='page'] {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+}
+
+.topbar__nav a:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
+}
+
+.topbar__cart {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 18px;
+    border-radius: 999px;
+}
+
+.topbar__cart:focus-visible {
+    outline: 2px solid var(--hazard);
+    outline-offset: 3px;
+}
+
+/*
+ * Setting `display` on an element beats the browser's own `[hidden]{display:none}`,
+ * so every element the component hides by attribute needs this or it renders as
+ * an empty shape. The tab did exactly that on a slide with no tab word.
+ */
+.hero [hidden] {
+    display: none !important;
+}
+
+/* --------------------------------------------------------------- empty state */
+
+.hero__empty {
+    position: absolute;
+    inset: 0;
+    z-index: 45;
+    display: grid;
+    place-content: center;
+    gap: 10px;
+    text-align: center;
+    padding: 8cqw;
+    color: rgba(237, 235, 230, 0.72);
+}
+
+.hero__empty strong {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 3cqw, 34px);
+    color: var(--paper);
+}
+
+.hero__empty p {
+    font-size: clamp(12px, 1.4cqw, 15px);
+    line-height: 1.9;
+    max-width: 46ch;
+}
+
+.hero__empty code {
+    font-family: ui-monospace, Consolas, monospace;
+    background: rgba(237, 235, 230, 0.1);
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-size: 0.9em;
+    direction: ltr;
+    display: inline-block;
+}
+
+/* ---------------------------------------------------------------------------
+   The card holds five stacked layers. Only the stage and the interface take
+   pointer events; the text layers must not, or the front one would swallow
+   every drag aimed at the canvas.
+   --------------------------------------------------------------------------- */
+
+.hero {
+    display: block;
+}
+
+/*
+ * The card is re-inset by --hero-edge, so that one number says where it begins.
+ */
+.hero--chrome {
+    padding-inline: var(--hero-edge);
+}
+
+/*
+ * ...and where the hero sits in the page frame, the frame's own padding is
+ * cancelled first, or the gap from the page edge would be the frame's padding
+ * PLUS the edge -- two numbers again, and a different one per width.
+ *
+ * Scoped to the frame because the editor renders this same component inside a
+ * panel that has no frame padding to cancel. Unscoped, the preview pulled
+ * itself out of its panel by whatever the frame happened to be padding by.
+ */
+.frame > .hero--chrome {
+    margin-inline: calc(var(--frame-pad) * -1);
+}
+
+.hero__card {
+    position: relative;
+    container-type: size;
+    width: 100%;
+    height: min(78svh, 760px);
+    min-height: 500px;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    isolation: isolate;
+    background-color: var(--paper);
+}
+
+/*
+ * With the navigation in the card, the card is only the dark shape: no box
+ * behind it, no ground of its own, nothing between it and the page. What shows
+ * through the three notches is the site's own background, unmediated.
+ */
+.hero--chrome .hero__card {
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+    height: min(84svh, 820px);
+}
+
+.hero__surface {
+    position: absolute;
+    top: var(--hero-surface-top);
+    inset-inline: var(--hero-frame);
+    bottom: var(--hero-frame);
+    overflow: hidden;
+    border-radius: var(--surface-radius);
+    /*
+     * The card's own dark ground, under the slide's paint rather than in it.
+     * .hero__bg is cleared to transparent on every slide change, so this is
+     * what a picture with transparency -- or one that has not arrived yet --
+     * sits on.
+     */
+    background-color: var(--card);
+}
+
+/* The light tab, and the notch it sits in, belong to the editor preview now.
+   Where the card carries the navigation, heroPath() cuts all three notches. */
+.hero:not(.hero--chrome) .hero__surface {
+    clip-path: shape(
+        from 0 0,
+        line to calc(100% - var(--tab-width) - var(--tab-curve)) 0,
+        curve to calc(100% - var(--tab-width)) var(--tab-height)
+            with calc(100% - var(--tab-width) - var(--tab-curve) * 0.18) 0 /
+            calc(100% - var(--tab-width) - var(--tab-curve) * 0.82) var(--tab-height),
+        line to calc(100% - var(--tab-edge-curve)) var(--tab-height),
+        curve to 100% calc(var(--tab-height) + var(--tab-edge-curve))
+            with calc(100% - var(--tab-edge-curve) * 0.45) var(--tab-height) /
+            100% calc(var(--tab-height) + var(--tab-edge-curve) * 0.45),
+        line to 100% 100%,
+        line to 0 100%,
+        close
+    );
+}
+
+[dir='ltr'] .hero:not(.hero--chrome) .hero__surface {
+    clip-path: shape(
+        from 100% 0,
+        line to calc(var(--tab-width) + var(--tab-curve)) 0,
+        curve to var(--tab-width) var(--tab-height)
+            with calc(var(--tab-width) + var(--tab-curve) * 0.18) 0 /
+            calc(var(--tab-width) + var(--tab-curve) * 0.82) var(--tab-height),
+        line to var(--tab-edge-curve) var(--tab-height),
+        curve to 0 calc(var(--tab-height) + var(--tab-edge-curve))
+            with calc(var(--tab-edge-curve) * 0.45) var(--tab-height) /
+            0 calc(var(--tab-height) + var(--tab-edge-curve) * 0.45),
+        line to 0 100%,
+        line to 100% 100%,
+        close
+    );
+}
+
+.hero__bg {
+    position: absolute;
+    inset: -4%;
+    z-index: 10;
+    background-color: var(--card);
+    background-position: center;
+    background-size: cover;
+    transition: background-color 0.45s ease;
+    will-change: transform;
+}
+
+.hero__bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 90% at 50% 8%, rgba(255, 255, 255, 0.08), transparent 60%);
+}
+
+.hero__layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.hero__layer--back {
+    z-index: 20;
+    display: grid;
+    place-items: center;
+}
+
+.hero__layer--front {
+    z-index: 40;
+}
+
+.hero__wordmark {
+    font-family: var(--font-display);
+    font-size: clamp(62px, 21cqw, 250px);
+    line-height: 0.82;
+    letter-spacing: 0.01em;
+    color: var(--paper);
+    white-space: nowrap;
+    transform: translateY(-8%);
+}
+
+/*
+ * Every movable element reads the same two custom properties, in percent of the
+ * card. They default to zero, so a slide with no saved layout sits exactly
+ * where the stylesheet puts it and the editor only ever stores a difference.
+ */
+.hero__tab,
+.hero__wordmark,
+.hero__tagline,
+.hero__stats {
+    translate: calc(var(--dx, 0) * 1cqw) calc(var(--dy, 0) * 1cqh);
+}
+
+/* -------------------------------------------------------------- light tab */
+
+.hero__tab {
+    position: absolute;
+    z-index: 22;
+    top: var(--hero-surface-top);
+    inset-inline-start: var(--hero-frame);
+    width: var(--tab-width);
+    height: calc(var(--tab-height) - var(--hero-frame));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: clamp(18px, 3cqw, 42px);
+}
+
+.hero__tab-word {
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: clamp(13px, 1.7cqw, 19px);
+    color: var(--ink);
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ stage */
+
+/*
+ * Everything that has to appear above the tab shares the surface's box but not
+ * its clip-path: the notch is a hole in the surface, so a garment drawn inside
+ * it could never reach the tab. Declared once, so the box cannot drift between
+ * the layers that make it up.
+ */
+.hero__stage,
+.hero__layer--front,
+.hero__empty,
+.hero__ui {
+    position: absolute;
+    top: var(--hero-surface-top);
+    inset-inline: var(--hero-frame);
+    bottom: var(--hero-frame);
+}
+
+.hero__stage {
+    z-index: 30;
+    border-radius: var(--surface-radius);
+    overflow: hidden;
+}
+
+/*
+ * In the notched card every layer is the card: there is no paper frame around
+ * the dark surface to inset them from, and no bar above it to start below. The
+ * rounded corners are a fallback only -- once heroPath() runs, clip-path
+ * replaces them on both clipped layers, and .is-notched says so.
+ */
+.hero--chrome .hero__surface,
+.hero--chrome .hero__stage,
+.hero--chrome .hero__layer--front,
+.hero--chrome .hero__empty,
+.hero--chrome .hero__ui {
+    top: 0;
+    inset-inline: 0;
+    bottom: 0;
+}
+
+.hero--chrome .hero__surface,
+.hero--chrome .hero__stage {
+    border-radius: var(--card-radius);
+}
+
+.hero--chrome .hero__card.is-notched .hero__surface,
+.hero--chrome .hero__card.is-notched .hero__stage {
+    border-radius: 0;
+}
+
+.hero__poster,
+.hero__canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.hero__poster {
+    object-fit: contain;
+    object-position: center;
+    transition: opacity 0.4s ease;
+}
+
+.hero__canvas {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.hero__card.is-live .hero__canvas {
+    opacity: 1;
+}
+
+.hero__card.is-live .hero__poster {
+    opacity: 0;
+}
+
+/* --------------------------------------------------------- front elements */
+
+.hero__tagline {
+    position: absolute;
+    inset-inline-start: clamp(18px, 5cqw, 64px);
+    bottom: clamp(70px, 13cqw, 130px);
+    max-width: min(34ch, 40cqw);
+    color: rgba(237, 235, 230, 0.72);
+    font-size: clamp(12px, 1.3cqw, 15px);
+    line-height: 1.85;
+}
+
+/*
+ * A band across the garment's lower half. Centring them is what makes the
+ * stacking legible: these cards sit ON the product, which is the whole point of
+ * the front layer.
+ */
+.hero__stats {
+    position: absolute;
+    inset-inline: 0;
+    margin-inline: auto;
+    width: max-content;
+    max-width: 92cqw;
+    /*
+     * Named, because the notched card puts a floor under it and a floor has to
+     * know what it is a floor under. A media query further down raises this on
+     * a phone; a rule that restated the clamp instead of reading it would win
+     * on specificity and quietly undo that.
+     */
+    --stats-bottom: clamp(86px, 17cqh, 160px);
+    bottom: var(--stats-bottom);
+    display: grid;
+    grid-auto-flow: column;
+    gap: clamp(10px, 1.4cqw, 16px);
+}
+
+/*
+ * Never into the bottom notch.
+ *
+ * The offset below is a share of the card, and on a wide card that share put
+ * the badges 48px down inside the piece cut out for the call to action --
+ * drawn over a hole, across the button. This is a floor under it, not a
+ * replacement for it: where the share already clears the notch it wins, and
+ * where the notch is deeper than the share the notch decides. The depth is
+ * measured and handed back by hero-notches.js; the fallback is the same one
+ * the tagline uses.
+ */
+.hero--chrome .hero__stats {
+    bottom: max(
+        var(--stats-bottom),
+        calc(var(--notch-bottom-h, 90px) + clamp(10px, 1.5cqw, 20px))
+    );
+}
+
+/*
+ * A slide with no model needs no second position for these.
+ *
+ * The offset above is a share of the CARD -- 17cqh -- not a measurement off
+ * the garment; the hem is only what the share was chosen to agree with. With
+ * the garment gone it still resolves to the same band, 70% to 82% of the card,
+ * which is below the wordmark (34% to 61%) and above the call to action. A
+ * rule that re-centred them here was tried and put them straight through the
+ * middle of the wordmark, which is the one thing the band was avoiding.
+ */
+
+/* Dark and translucent, so the values read over pale cloth and over the card
+   alike; a light card would vanish against a white garment. */
+.hero__stat {
+    background: rgba(11, 11, 12, 0.58);
+    border: 1px solid rgba(237, 235, 230, 0.16);
+    backdrop-filter: blur(7px);
+    border-radius: 16px;
+    padding: clamp(11px, 1.5cqw, 18px) clamp(14px, 2cqw, 24px);
+    min-width: clamp(110px, 15cqw, 168px);
+}
+
+.hero__stat-value {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: clamp(17px, 2.3cqw, 32px);
+    line-height: 1.1;
+    color: var(--paper);
+}
+
+.hero__stat-label {
+    display: block;
+    margin-top: 3px;
+    font-size: clamp(10px, 1.05cqw, 12px);
+    color: rgba(237, 235, 230, 0.6);
+}
+
+/* ----------------------------------------------------------------- the UI */
+
+.hero__ui {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.hero__cta {
+    position: absolute;
+    bottom: clamp(20px, 4cqw, 44px);
+    inset-inline-start: clamp(18px, 5cqw, 64px);
+    pointer-events: auto;
+    display: inline-block;
+    background: var(--paper);
+    color: var(--ink);
+    border: 0;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: 14px;
+    text-decoration: none;
+    padding: 14px 38px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.hero__cta:hover {
+    background: var(--hazard);
+}
+
+.hero__cta:focus-visible {
+    outline: 3px solid var(--hazard);
+    outline-offset: 3px;
+}
+
+.hero__dots {
+    position: absolute;
+    bottom: clamp(24px, 4cqw, 48px);
+    inset-inline-end: clamp(18px, 5cqw, 64px);
+    display: flex;
+    gap: 9px;
+    pointer-events: auto;
+}
+
+.hero__dot {
+    width: 28px;
+    height: 3px;
+    background: rgba(237, 235, 230, 0.25);
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    transition: background-color 0.25s ease;
+}
+
+.hero__dot[aria-current='true'] {
+    background: var(--paper);
+}
+
+.hero__dot:focus-visible {
+    outline: 2px solid var(--hazard);
+    outline-offset: 5px;
+}
+
+/* ------------------------------------------------- the chrome in the notches
+
+   Three groups, each flush into its own corner of the card, each a sibling of
+   the clipped layers. The notch behind a group is cut to the group's measured
+   box plus one gap on the two inner sides, so these boxes are the input to the
+   shape rather than something positioned against it: nothing here reads a
+   notch dimension back except the tagline, which only has to stay clear.
+
+   Until heroPath() has run -- and on a browser with no clip-path: path() --
+   there is no hole for them to sit in, so they carry a paper pill of their own
+   and give it up once .is-notched appears.
+   -------------------------------------------------------------------------- */
+
+/*
+ * Which shape the top of the card takes. hero-notches.js reads this back rather
+ * than keeping its own copy of the breakpoint below.
+ */
+.hero--chrome .hero__card {
+    --chrome-mode: split;
+}
+
+/* Nothing of its own while the two groups sit in separate corners. */
+.hero__chrome {
+    display: contents;
+}
+
+/*
+ * No padding on the outer side. The card is already inset by --hero-edge and
+ * the group is flush into its corner of it, so the logo's left edge and the
+ * card's left edge are the same coordinate -- which is the whole point of the
+ * edge being one number. The inner side keeps its clearance toward the notch.
+ */
+.hero__notch {
+    position: absolute;
+    z-index: 60;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: clamp(10px, 1.6cqw, 22px);
+    padding-block: clamp(8px, 1cqw, 12px);
+    background: var(--paper);
+    border-radius: 0 0 999px 0;
+}
+
+.hero__notch--start {
+    inset-inline-start: 0;
+    padding-inline: 0 clamp(14px, 2cqw, 26px);
+}
+
+/*
+ * The mark stands apart from the links rather than reading as the first of
+ * them. Only where the links are actually a row: folded, this gap is the one
+ * between the mark and the menu button, and 40px there is just a hole.
+ */
+@media (min-width: 1100px) {
+    .hero__notch--start {
+        gap: 40px;
+    }
+}
+
+.hero__notch--end {
+    inset-inline-end: 0;
+    padding-inline: clamp(14px, 2cqw, 26px) 0;
+    border-radius: 0 0 0 999px;
+}
+
+.hero__card.is-notched .hero__notch {
+    background: transparent;
+    border-radius: 0;
+}
+
+.hero__nav {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+/*
+ * Full ink, not the muted grey these carried before. The links sit on paper --
+ * the page's own ground, showing through the notch -- and the grey measured
+ * 4.54:1 against it, which clears AA by a hair and reads as disabled next to
+ * the cart button beside it. Ink is 16.5:1.
+ */
+.hero__nav a {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 6px 2px;
+}
+
+/*
+ * The rule is the whole signal: hovering and being here look the same, and
+ * neither changes the colour, so nothing shifts and nothing dims. An underline
+ * rather than a border, so it can be offset clear of the descenders and so
+ * turning it on costs no layout.
+ */
+.hero__nav a:hover,
+.hero__nav a[aria-current='page'] {
+    text-decoration: underline;
+    text-decoration-color: var(--ink);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
+}
+
+.hero__nav a:focus-visible,
+.hero__cart:focus-visible,
+.hero__account:focus-visible,
+.hero__menu-button:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+.hero__cart {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 16px;
+    border-radius: 999px;
+}
+
+.hero__cart:focus-visible {
+    outline-color: var(--hazard);
+}
+
+.hero__cart-count {
+    font-variant-numeric: tabular-nums;
+}
+
+.hero__account {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.hero__account:hover {
+    border-color: var(--ink);
+}
+
+/*
+ * The call to action in the bottom notch, positioned by the notch it fills
+ * rather than by an inset from the card's edge.
+ *
+ * It also changes colour. On the dark card a paper pill was the contrast; in a
+ * notch it sits on the page's own paper ground, where a paper pill is a label
+ * with no button under it.
+ */
+.hero__cta--notch {
+    position: absolute;
+    z-index: 60;
+    bottom: 0;
+    inset-inline-start: 0;
+    inset-inline-end: auto;
+    margin-inline: 0;
+    background: var(--ink);
+    color: var(--paper);
+}
+
+.hero__cta--notch:hover {
+    background: var(--hazard);
+    color: var(--ink);
+}
+
+/* Above the bottom notch, not across it. Both read the notch's measured depth
+   back out of the card, which is the only thing here that needs to. */
+.hero--chrome .hero__tagline {
+    bottom: calc(var(--notch-bottom-h, 90px) + clamp(10px, 2cqw, 26px));
+}
+
+.hero--chrome .hero__dots {
+    bottom: calc(var(--notch-bottom-h, 90px) + clamp(10px, 1.6cqw, 20px));
+}
+
+/* ---------------------------------------------------------- folded-away nav */
+
+/*
+ * Wide enough for both top notches, the links sit in the row and the button is
+ * not rendered. Narrower, the links move into a panel under the same notch and
+ * the button opens it -- all three of them, none dropped. The end notch is
+ * untouched either way: the cart and the account stay where they are.
+ */
+.hero__menu-button {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.hero__menu-bars,
+.hero__menu-bars::before,
+.hero__menu-bars::after {
+    display: block;
+    width: 16px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 2px;
+}
+
+.hero__menu-bars::before,
+.hero__menu-bars::after {
+    content: '';
+    position: relative;
+}
+
+.hero__menu-bars::before {
+    top: -5px;
+}
+
+.hero__menu-bars::after {
+    top: 3px;
+}
+
+@container (max-width: 700px) {
+    .hero__tagline {
+        display: none;
+    }
+
+    /* Bigger than the garment is wide, so the word still runs out from behind it
+       on a phone; at 21cqw the two are the same width and the effect vanishes. */
+    .hero__wordmark {
+        font-size: 27cqw;
+    }
+
+    /* High enough to still land on the garment's hem: the cards have to read as
+       being in front of the product on a phone too, not below it. */
+    .hero__stats {
+        --stats-bottom: clamp(96px, 27cqh, 180px);
+    }
+}
+
+@media (max-width: 820px) {
+    :root {
+        --card-radius: 36px;
+        --hero-frame: 8px;
+        --tab-width: 34%;
+        --tab-height: 50px;
+    }
+
+    .hero__card {
+        height: min(72svh, 620px);
+    }
+
+    :root {
+        --hero-topbar-height: 64px;
+    }
+
+    /* inset-inline + auto margins, not a 50% offset plus a negative transform:
+       the transform version lands off-centre in a right-to-left document. */
+    .hero__cta {
+        inset-inline: 0;
+        margin-inline: auto;
+        width: max-content;
+        max-width: 84vw;
+        bottom: 22px;
+    }
+
+    .hero__dots {
+        inset-inline: 0;
+        justify-content: center;
+        bottom: 10px;
+    }
+}
+
+@media (max-width: 700px) {
+    /* The links do not fit beside the brand and the cart; the same routes are a
+       tap away from the catalogue, so the row loses them rather than overflow. */
+    .topbar__nav {
+        display: none;
+    }
+}
+
+/*
+ * Below the 3D cut-off there is no scene to match, so the still may fill the
+ * card instead of matching the camera. Its background is transparent, so cover
+ * crops only empty space. The inset keeps the garment clear of the tab above it
+ * and the call to action below.
+ */
+@media (max-width: 767px) {
+    .hero__poster {
+        /* An explicit height, not top+bottom: an absolutely positioned replaced
+           element with height:auto falls back to its intrinsic ratio and ignores
+           the bottom offset. */
+        top: 9%;
+        bottom: auto;
+        height: 62%;
+        object-fit: cover;
+    }
+}
+
+/* ---------------------------------------------- the notched card, narrowed */
+
+/*
+ * Last of the responsive blocks on purpose: the rules above centre the call to
+ * action and hide the navigation row, and in the notched card both of those
+ * belong to a notch that is still there.
+ */
+@media (max-width: 1099px) {
+    /* Both top notches no longer fit side by side with three links spelled
+       out, so the links fold behind the button in the same notch. Measured:
+       at 1024 the two groups want 828px of a 995px edge, which leaves the
+       navigation crowding the cart rather than sitting in its own notch. */
+    .hero--chrome .hero__menu-button {
+        display: inline-flex;
+    }
+
+    .hero--chrome .hero__nav {
+        position: absolute;
+        top: 100%;
+        inset-inline-start: clamp(8px, 2cqw, 18px);
+        z-index: 70;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        min-width: 210px;
+        padding: 8px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 18px 40px rgba(11, 11, 12, 0.18);
+    }
+
+    .hero--chrome .hero__card.is-menu-open .hero__nav {
+        display: flex;
+    }
+
+    /* Same ink and same size as the row; a panel row is a bigger target, and
+       the highlight is a filled pill rather than a rule under the words. */
+    .hero--chrome .hero__nav a {
+        padding: 11px 14px;
+        border-radius: 11px;
+    }
+
+    .hero--chrome .hero__nav a:hover,
+    .hero--chrome .hero__nav a[aria-current='page'] {
+        background: rgba(11, 11, 12, 0.06);
+        text-decoration: none;
+    }
+
+    /* The pill stays in its notch; the centred rule above is for the card
+       that has no notch to hold it. */
+    .hero--chrome .hero__cta--notch {
+        inset-inline-start: 0;
+        inset-inline-end: auto;
+        margin-inline: 0;
+        width: auto;
+        bottom: 0;
+        padding: 12px 24px;
+    }
+
+    /* Clear of the call to action, which is now in the corner rather than
+       across the middle. */
+    .hero--chrome .hero__dots {
+        inset-inline-start: auto;
+        inset-inline-end: clamp(16px, 5cqw, 44px);
+        justify-content: flex-end;
+        bottom: calc(var(--notch-bottom-h, 76px) + 14px);
+    }
+}
+
+/*
+ * One notch across the whole top edge.
+ *
+ * Two corner notches cannot both fit on a phone however little is in them: at
+ * 360 the two groups want 312px of the 244px the brief's W - R*2 allows, and
+ * folding the links away does not change that -- the cart, the account, the
+ * logo and the button are irreducible. So below this the top stops being two
+ * corner cuts and becomes one band: the card simply starts lower, the row runs
+ * the full width, and there is no inner corner left to violate. The bottom
+ * notch is unaffected and stays a corner cut at every width.
+ */
+@media (max-width: 599px) {
+    .hero--chrome .hero__card {
+        --chrome-mode: single;
+    }
+
+    .hero__chrome {
+        display: flex;
+        position: absolute;
+        z-index: 60;
+        top: 0;
+        inset-inline: 0;
+        align-items: center;
+        gap: 10px;
+        padding: 9px clamp(12px, 3.5vw, 20px);
+        background: var(--paper);
+    }
+
+    .hero__card.is-notched .hero__chrome {
+        background: transparent;
+    }
+
+    /* In flow as flex items -- but still positioned, because the folded menu
+       hangs off .hero__notch--start and needs it as a containing block. */
+    .hero--chrome .hero__notch {
+        position: relative;
+        inset: auto;
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
+    }
+
+    /* Pushes the cart and the account to the far end of the row. */
+    .hero--chrome .hero__notch--start {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .hero--chrome .hero__notch--end {
+        flex: none;
+    }
+
+    .hero--chrome .hero__nav {
+        inset-inline-start: 0;
+    }
+}
+
+@media (max-width: 520px) {
+    /* The cart's word is the first thing to go; the icon and the count carry
+       it, and the accessible name is still on the link. */
+    .hero--chrome .hero__cart {
+        padding: 9px 12px;
+    }
+
+    .hero--chrome .hero__account,
+    .hero--chrome .hero__menu-button {
+        width: 34px;
+        height: 34px;
+    }
+
+    .hero--chrome .brand__logo {
+        height: 26px;
+    }
+
+    .hero--chrome .brand__wordmark {
+        font-size: 17px;
+        line-height: 26px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero__card *,
+    .hero__card {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* --------------------------------------------------------------- footer */
+
+.footer {
+    padding-top: clamp(20px, 3vw, 40px);
+    padding-inline: clamp(14px, 2.4vw, 40px);
+}
+
+/* The inline gutter is the footer's now, so this only sets the vertical rhythm. */
+.credit {
+    padding-block: 14px 34px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.9;
+    max-width: 80ch;
+}
+
+.credit a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.credit a:focus-visible {
+    outline: 2px solid var(--hazard);
+    outline-offset: 3px;
+}

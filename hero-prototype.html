@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الهيرو — نموذج أولي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo:wght@400;600;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0B0B0C;
+  --paper:#EFEDE7;
+  --dim:#8A8A85;
+  --hazard:#E9C400;
+  --hazard-dark:#141414;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--paper);font-family:'Cairo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* ---------- الهيرو: أربع طبقات فوق بعضها ---------- */
+.hero{position:relative;width:100%;height:100svh;min-height:520px;max-height:820px;overflow:hidden;isolation:isolate}
+.layer{position:absolute;inset:0}
+
+/* 1 — الخلفية */
+.l-bg{z-index:10;background:var(--ink);transition:background-color .6s ease}
+.l-bg::after{content:"";position:absolute;inset:-6%;background:
+  radial-gradient(120% 90% at 50% 12%, rgba(255,255,255,.09), transparent 62%);
+  will-change:transform}
+.hazard{position:absolute;left:0;right:0;height:14px;
+  background:repeating-linear-gradient(115deg,var(--hazard) 0 22px,var(--hazard-dark) 22px 44px);
+  opacity:.9}
+.hazard.h-a{top:31%;transform:scaleX(.42);transform-origin:right}
+.hazard.h-b{bottom:26%;transform:scaleX(.30);transform-origin:left}
+
+/* 2 — النص الخلفي (يمرّ خلف المنتج) */
+.l-back{z-index:20;display:grid;place-items:center;pointer-events:none}
+.wordmark{font-family:'Anton',sans-serif;line-height:.82;letter-spacing:.01em;
+  font-size:clamp(72px,17vw,230px);color:var(--paper);white-space:nowrap;
+  transform:translateY(-14%);will-change:transform}
+
+/* 3 — المشهد ثلاثي الأبعاد (خلفية شفافة) */
+.l-3d{z-index:30}
+#scene{width:100%;height:100%;display:block;opacity:0;transition:opacity .7s ease}
+#scene.ready{opacity:1}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim);font-size:13px;
+  letter-spacing:.04em;transition:opacity .4s ease}
+.loading.gone{opacity:0}
+
+/* 4 — النص الأمامي (يمرّ أمام المنتج) */
+.l-front{z-index:40;pointer-events:none}
+.front-a,.front-b{position:absolute;font-family:'Anton',sans-serif;color:var(--paper);
+  line-height:.9;white-space:nowrap;will-change:transform}
+.front-a{top:22%;right:7%;font-size:clamp(20px,3.4vw,44px)}
+.front-b{bottom:31%;left:6%;font-size:clamp(24px,5vw,66px);text-align:left}
+.kicker{position:absolute;bottom:20%;left:6%;max-width:min(330px,42vw);color:var(--dim);
+  font-size:clamp(11px,1.1vw,13px);line-height:1.75;text-align:left;direction:rtl;will-change:transform}
+
+/* واجهة ثابتة فوق الكل */
+.l-ui{z-index:50}
+.cta{position:absolute;bottom:7%;left:50%;transform:translateX(-50%);
+  background:var(--paper);color:var(--ink);border:0;cursor:pointer;
+  font-family:'Cairo',sans-serif;font-weight:900;font-size:14px;
+  padding:15px 44px;letter-spacing:.02em;transition:background-color .2s, color .2s}
+.cta:hover{background:var(--hazard);color:var(--hazard-dark)}
+.cta:focus-visible{outline:3px solid var(--hazard);outline-offset:3px}
+.dots{position:absolute;bottom:7%;right:6%;display:flex;gap:9px}
+.dot{width:26px;height:3px;background:rgba(239,237,231,.25);border:0;padding:0;cursor:pointer}
+.dot[aria-current="true"]{background:var(--paper)}
+.dot:focus-visible{outline:2px solid var(--hazard);outline-offset:4px}
+
+@media (max-width:820px){
+  .hero{height:74svh}
+  .front-a{top:15%;right:5%}
+  .front-b{bottom:34%;left:5%}
+  .kicker{display:none}
+  .dots{right:50%;transform:translateX(50%);bottom:3%}
+  .cta{bottom:12%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<section class="hero" id="hero" aria-label="عرض المنتجات">
+
+  <div class="layer l-bg" id="lBg">
+    <div class="hazard h-a"></div>
+    <div class="hazard h-b"></div>
+  </div>
+
+  <div class="layer l-back">
+    <div class="wordmark" id="wordmark">OVERSIZE</div>
+  </div>
+
+  <div class="layer l-3d">
+    <canvas id="scene"></canvas>
+    <div class="loading" id="loading">جارٍ التحميل</div>
+  </div>
+
+  <div class="layer l-front">
+    <div class="front-a" id="frontA">قصّة واسعة</div>
+    <div class="front-b" id="frontB">قطن ممشّط ٢٤٠ غم</div>
+    <p class="kicker" id="kicker">من اختيار القماش وتجهيز التصميم إلى القص والخياطة والطباعة والتغليف — كل شيء في مكان واحد.</p>
+  </div>
+
+  <div class="layer l-ui">
+    <button class="cta" id="cta">اطلب تصميمك</button>
+    <div class="dots" id="dots" role="tablist" aria-label="الشرائح"></div>
+  </div>
+
+</section>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ============================================================
+   هذا الكائن هو ما ستملؤه لوحة التحكم لاحقًا (جدول hero_slides).
+   كل حقل هنا يقابل عمودًا في قاعدة البيانات.
+   ============================================================ */
+const SLIDES = [
+  {
+    model: 'basic_t-shirt.glb',
+    garmentColor: '#E7E4DC',
+    background:   '#0B0B0C',
+    wordmark:     'OVERSIZE',
+    frontA:       'قصّة واسعة',
+    frontB:       'قطن ممشّط ٢٤٠ غم',
+    kicker:       'من اختيار القماش وتجهيز التصميم إلى القص والخياطة والطباعة والتغليف — كل شيء في مكان واحد.',
+    cta:          'اطلب تصميمك'
+  },
+  {
+    model: 'basic_t-shirt.glb',
+    garmentColor: '#1C1C1E',
+    background:   '#121110',
+    wordmark:     'ORIGINAL',
+    frontA:       'طباعة DTF',
+    frontB:       'لا تبهت بعد الغسيل',
+    kicker:       'حبر يتغلغل في النسيج بدل أن يجلس فوقه، فيبقى التصميم كما هو بعد خمسين غسلة.',
+    cta:          'ارفع تصميمك'
+  }
+];
+
+/* منطقة الطباعة على الصدر بإحداثيات UV المستخرجة من هذا الموديل تحديدًا.
+   تُستخدم لاحقًا في المحرّر لوضع تصميم العميل. */
+const PRINT_AREA = { front:{u0:0.104,u1:0.374,v0:0.111,v1:0.395},
+                     back: {u0:0.575,u1:0.849,v0:0.121,v1:0.404} };
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse  = matchMedia('(pointer: coarse)').matches;
+
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+camera.position.set(0, 0, 3.1);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.06).texture;
+
+const key = new THREE.DirectionalLight(0xffffff, 2.1);
+key.position.set(-2.2, 2.4, 3.2);
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xffffff, 1.4);
+rim.position.set(2.6, 0.6, -2.4);
+scene.add(rim);
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+
+const pivot = new THREE.Group();
+scene.add(pivot);
+
+let garment = null;
+
+/* الموديل يستخدم امتداد specular-glossiness المهجور، لذا نعيد بناء الخامة
+   كـ MeshStandardMaterial ونحتفظ بخريطة الـ normal الأصلية فقط. */
+function rebuildMaterial(mesh){
+  const old = mesh.material;
+  const mat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(SLIDES[0].garmentColor),
+    roughness: 0.92,
+    metalness: 0.0,
+    side: THREE.DoubleSide
+  });
+  if (old && old.normalMap){
+    mat.normalMap = old.normalMap;
+    mat.normalScale.set(0.85, 0.85);
+  }
+  mesh.material = mat;
+  return mat;
+}
+
+let garmentMat = null;
+
+new GLTFLoader().load(SLIDES[0].model, (gltf) => {
+  const root = gltf.scene;
+  root.traverse(o => { if (o.isMesh) garmentMat = rebuildMaterial(o); });
+
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  root.position.sub(center);
+  const s = 1.62 / size.y;
+  root.scale.setScalar(s);
+
+  garment = root;
+  pivot.add(root);
+
+  canvas.classList.add('ready');
+  document.getElementById('loading').classList.add('gone');
+  applySlide(0, true);
+}, undefined, (e) => {
+  document.getElementById('loading').textContent = 'ضع ملف basic_t-shirt.glb بجانب هذا الملف';
+  console.error(e);
+});
+
+function resize(){
+  const r = canvas.parentElement.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / r.height;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+/* ---------- حركة الماوس: كل طبقة بسرعة مختلفة ---------- */
+const target = {x:0, y:0};
+const cur    = {x:0, y:0};
+
+if (!coarse && !reduced){
+  addEventListener('pointermove', (e) => {
+    target.x = (e.clientX / innerWidth  - 0.5) * 2;
+    target.y = (e.clientY / innerHeight - 0.5) * 2;
+  });
+}
+
+const lBg      = document.getElementById('lBg');
+const wordmark = document.getElementById('wordmark');
+const frontA   = document.getElementById('frontA');
+const frontB   = document.getElementById('frontB');
+const kicker   = document.getElementById('kicker');
+
+const DEPTH = { bg:6, word:16, model:0.105, frontA:26, frontB:30, kicker:22 };
+
+let running = true;
+new IntersectionObserver(([en]) => { running = en.isIntersecting; })
+  .observe(document.getElementById('hero'));
+
+function tick(){
+  requestAnimationFrame(tick);
+  if (!running) return;
+
+  cur.x += (target.x - cur.x) * 0.075;
+  cur.y += (target.y - cur.y) * 0.075;
+
+  lBg.style.transform      = `translate3d(${-cur.x*DEPTH.bg}px, ${-cur.y*DEPTH.bg}px, 0)`;
+  wordmark.style.transform = `translate3d(${-cur.x*DEPTH.word}px, ${-cur.y*DEPTH.word}px, 0) translateY(-14%)`;
+  frontA.style.transform   = `translate3d(${cur.x*DEPTH.frontA}px, ${cur.y*DEPTH.frontA}px, 0)`;
+  frontB.style.transform   = `translate3d(${cur.x*DEPTH.frontB}px, ${cur.y*DEPTH.frontB}px, 0)`;
+  kicker.style.transform   = `translate3d(${cur.x*DEPTH.kicker}px, ${cur.y*DEPTH.kicker}px, 0)`;
+
+  if (garment){
+    pivot.rotation.y = cur.x * DEPTH.model;
+    pivot.rotation.x = cur.y * DEPTH.model * 0.55;
+  }
+  renderer.render(scene, camera);
+}
+tick();
+
+/* ---------- تبديل الشرائح ---------- */
+const dotsBox = document.getElementById('dots');
+const ctaBtn  = document.getElementById('cta');
+let index = 0;
+
+SLIDES.forEach((_, i) => {
+  const b = document.createElement('button');
+  b.className = 'dot';
+  b.setAttribute('role','tab');
+  b.setAttribute('aria-label', `الشريحة ${i+1}`);
+  b.onclick = () => applySlide(i);
+  dotsBox.appendChild(b);
+});
+
+function applySlide(i, instant){
+  index = i;
+  const s = SLIDES[i];
+  lBg.style.backgroundColor = s.background;
+  wordmark.textContent = s.wordmark;
+  frontA.textContent   = s.frontA;
+  frontB.textContent   = s.frontB;
+  kicker.textContent   = s.kicker;
+  ctaBtn.textContent   = s.cta;
+  [...dotsBox.children].forEach((d, k) => d.setAttribute('aria-current', k === i));
+
+  if (garmentMat){
+    const to = new THREE.Color(s.garmentColor);
+    if (instant || reduced){ garmentMat.color.copy(to); }
+    else {
+      const from = garmentMat.color.clone();
+      const t0 = performance.now();
+      (function fade(){
+        const k = Math.min((performance.now() - t0) / 450, 1);
+        garmentMat.color.copy(from).lerp(to, k);
+        if (k < 1) requestAnimationFrame(fade);
+      })();
+    }
+  }
+}
+
+if (!reduced){
+  setInterval(() => applySlide((index + 1) % SLIDES.length), 7000);
+}
+</script>
+</body>
+</html>

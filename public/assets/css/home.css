@@ -1,0 +1,325 @@
+/*
+ * The landing page below the hero.
+ *
+ * The shared pieces -- the button, the section heading, the reveal, the footer --
+ * are in base.css, which every page loads. This file is the three sections that
+ * exist only here.
+ *
+ * Every value is a var() from tokens.css, with the exceptions noted in base.css.
+ * Nothing below names the navbar, the hero, or a product card's tile or price.
+ */
+
+/* ============================================================== home page */
+
+/*
+ * One rhythm for the whole page: the same container and the same gap between
+ * every section, so no section decides its own margins. .strip -- the "about"
+ * section that was here before this work -- is left exactly as store.css has it.
+ */
+.home-section {
+    width: min(100%, var(--container));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    margin-block-start: var(--section-gap);
+}
+
+/* -------------------------------------------------------- category cards */
+
+.home-cats__grid {
+    display: grid;
+    /* One column on a phone, two from 768px up. Stated as 1fr rather than auto-fit
+       so the two cards are always equal halves and never 60/40. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+    .home-cats__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-5);
+    }
+}
+
+/*
+ * The whole card is the link -- image, heading, copy and the thing that looks
+ * like a button. isolation creates a stacking context so the scrim and the body
+ * stack against the card and not against the page.
+ */
+.cat-card {
+    position: relative;
+    display: block;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--gray-200);
+    color: var(--white);
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.cat-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.cat-card:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.cat-card__media {
+    display: block;
+    /* 4:5 on a phone, where a tall card fills the screen usefully; wider on
+       desktop, where two 4:5 cards side by side would push the page below it off
+       the first screen entirely. */
+    aspect-ratio: 4 / 5;
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .cat-card__media {
+        aspect-ratio: 4 / 3;
+    }
+}
+
+.cat-card__media img,
+.cat-card__blank {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    /* The one movement the card makes. scale, not width: it is composited, so it
+       does not reflow the grid on every frame of the hover. */
+    transition: transform var(--dur-slow) var(--ease);
+}
+
+.cat-card__blank {
+    background: linear-gradient(160deg, var(--gray-200), var(--gray-400));
+}
+
+.cat-card:hover .cat-card__media img,
+.cat-card:hover .cat-card__blank {
+    transform: scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cat-card:hover .cat-card__media img,
+    .cat-card:hover .cat-card__blank {
+        transform: none;
+    }
+}
+
+/*
+ * The scrim is what makes white type legible over an unknown photograph. Dark at
+ * the bottom where the words are, clear at the top where the garment is. The
+ * alpha values are literals because a colour token cannot carry a gradient stop,
+ * and they are the same grey as --gray-900.
+ */
+.cat-card__scrim {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background: linear-gradient(
+        to top,
+        rgba(20, 20, 20, 0.82) 0%,
+        rgba(20, 20, 20, 0.45) 38%,
+        rgba(20, 20, 20, 0.05) 72%,
+        rgba(20, 20, 20, 0) 100%
+    );
+}
+
+.cat-card__body {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-5);
+}
+
+@media (min-width: 768px) {
+    .cat-card__body {
+        padding: var(--space-6);
+    }
+}
+
+.cat-card__title {
+    color: var(--white);
+    font-size: var(--fs-h3);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+}
+
+.cat-card__text {
+    max-width: 38ch;
+    /* Not --text-on-dark-muted: over a photograph the contrast floor cannot be
+       computed, so the body copy stays at the bright end. */
+    color: var(--text-on-dark);
+    font-size: var(--fs-small);
+    font-weight: var(--weight-regular);
+    line-height: var(--leading-body);
+}
+
+/* A span, not a nested anchor: the card is already the link. */
+.cat-card__cta {
+    pointer-events: none;
+    margin-top: var(--space-1);
+}
+
+/* ----------------------------------------------------------- trending strip */
+
+/*
+ * The strip carries class="page--catalog" so the product card's stylesheet
+ * applies to it unchanged -- see the comment at the top of home-trending.php.
+ * These four declarations cancel what that class does as a PAGE. Two classes
+ * beats the one-class selector in store.css, so no !important is needed.
+ */
+.home-trending.page--catalog {
+    width: min(100%, var(--container));
+    margin-inline: auto;
+    padding: 0 var(--gutter);
+    background: transparent;
+}
+
+/*
+ * A swipeable rail on a phone, a grid from 768px up.
+ *
+ * The rail wins on a phone because eight cards in a 2-column grid is four rows
+ * of scrolling before the next section, and the section after this one is the
+ * thing the page is trying to get people to. Above 768px there is room for four
+ * across and nothing needs to be hidden.
+ *
+ * grid-auto-flow: column is what turns the SAME grid into a rail: the column
+ * template from store.css still applies to the cells, so the cards keep their
+ * width relationship and there is no second card list in the markup.
+ */
+.home-trending__rail {
+    grid-auto-flow: column;
+    grid-auto-columns: 42%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    /* The rail bleeds to both page edges so the last card is cut by the screen
+       rather than floating short of it -- that cut is what says "scroll me". */
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    /* Room for the focus ring, which would otherwise be clipped by the scroller. */
+    padding-block: var(--space-1);
+    scrollbar-width: none;
+}
+
+.home-trending__rail::-webkit-scrollbar {
+    display: none;
+}
+
+.home-trending__cell {
+    min-width: 0;
+    scroll-snap-align: start;
+}
+
+.home-trending__rail:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: var(--space-1);
+    border-radius: var(--radius-sm);
+}
+
+@media (min-width: 768px) {
+    .home-trending__rail {
+        /* Back to the grid store.css defines: three columns at this width, four
+           from 1200px. Everything the rail added is undone by name. */
+        grid-auto-flow: row;
+        grid-auto-columns: auto;
+        overflow-x: visible;
+        scroll-snap-type: none;
+        margin-inline: 0;
+        padding-inline: 0;
+    }
+}
+
+/* --------------------------------------------------------- the promo banner */
+
+.home-promo {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    /* Under the photograph, and visible through it while it loads. */
+    background: var(--gray-800);
+    box-shadow: var(--shadow-sm);
+}
+
+.home-promo__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 0;
+}
+
+/*
+ * The wash. With a photograph it is a scrim over it; with none it IS the
+ * background -- an even charcoal-to-grey diagonal rather than a stand-in for a
+ * missing image, so an owner who never uploads one still has a finished banner.
+ */
+.home-promo__scrim {
+    position: absolute;
+    inset: 0;
+    display: block;
+    z-index: 1;
+    background: linear-gradient(
+        to top,
+        rgba(20, 20, 20, 0.88) 0%,
+        rgba(20, 20, 20, 0.62) 55%,
+        rgba(20, 20, 20, 0.38) 100%
+    );
+}
+
+.home-promo--plain .home-promo__scrim {
+    background: linear-gradient(135deg, var(--gray-900), var(--gray-700) 55%, var(--gray-800));
+}
+
+.home-promo__body {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    max-width: 60ch;
+    padding: var(--space-7) var(--space-5);
+}
+
+@media (min-width: 768px) {
+    .home-promo__body {
+        padding: var(--space-9) var(--space-8);
+    }
+}
+
+.home-promo__eyebrow {
+    color: var(--text-on-dark-muted);
+    font-size: var(--fs-caption);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+}
+
+.home-promo__title {
+    color: var(--white);
+    font-size: var(--fs-h1);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+}
+
+.home-promo__text {
+    color: var(--text-on-dark);
+    font-size: var(--fs-body);
+    font-weight: var(--weight-regular);
+    line-height: var(--leading-body);
+}
+

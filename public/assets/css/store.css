@@ -1,0 +1,2714 @@
+/* Store chrome. The hero owns its own file; this dresses everything around it. */
+
+.page {
+    padding: clamp(20px, 3.5vw, 56px) clamp(14px, 2.4vw, 40px);
+}
+
+.page__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: clamp(18px, 2.5vw, 32px);
+}
+
+.page__title {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4.6vw, 60px);
+    line-height: 1;
+    letter-spacing: 0.01em;
+}
+
+.page__lede {
+    color: var(--muted);
+    max-width: 60ch;
+    line-height: 1.9;
+}
+
+/* --------------------------------------------------------------- home strip */
+
+.strip {
+    padding: clamp(34px, 5vw, 84px) clamp(14px, 2.4vw, 40px) clamp(10px, 2vw, 30px);
+}
+
+.strip__title {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 3.4vw, 46px);
+    margin-bottom: clamp(18px, 2.6vw, 36px);
+}
+
+.strip__grid {
+    display: grid;
+    gap: clamp(16px, 2.4vw, 34px);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.strip__grid h3 {
+    font-size: 17px;
+    margin-bottom: 8px;
+}
+
+.strip__grid p {
+    color: var(--muted);
+    line-height: 1.9;
+    font-size: 14px;
+}
+
+/* ----------------------------------------------------------------- product */
+
+.product {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+    gap: clamp(20px, 3vw, 48px);
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .product {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.product__preview {
+    min-width: 0;
+}
+
+.product-gallery,
+.product-gallery__stage {
+    min-width: 0;
+    width: 100%;
+}
+
+.product-gallery__stage {
+    position: relative;
+    background: var(--card);
+    border-radius: 28px;
+    aspect-ratio: 1.4 / 1;
+    overflow: hidden;
+}
+
+.product-gallery__main {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+    touch-action: pan-y;
+}
+
+.product-gallery__main img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.product-gallery__arrow,
+.product-gallery__close,
+.product-gallery__zoom {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.product-gallery__arrow {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.product-gallery__arrow--prev {
+    inset-inline-start: 12px;
+}
+
+.product-gallery__arrow--next {
+    inset-inline-end: 12px;
+}
+
+.product-gallery__thumbs {
+    display: flex;
+    max-width: 100%;
+    gap: 8px;
+    padding: 10px 2px 2px;
+    overflow-x: auto;
+}
+
+.product-gallery__thumb {
+    flex: 0 0 68px;
+    width: 68px;
+    height: 68px;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.product-gallery__thumb.is-on {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink);
+}
+
+.product-gallery__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-gallery__dialog {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 56px 24px 24px;
+    border: 0;
+    background: rgba(16, 16, 18, 0.96);
+    overflow: auto;
+}
+
+.product-gallery__dialog::backdrop {
+    background: rgba(16, 16, 18, 0.8);
+}
+
+.product-gallery__dialog > img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: calc(100dvh - 80px);
+    margin: auto;
+    object-fit: contain;
+    transform-origin: center;
+    transition: transform 0.18s ease;
+}
+
+.product-gallery__dialog > img.is-zoomed {
+    transform: scale(1.8);
+    cursor: zoom-out;
+}
+
+.product-gallery__close {
+    inset-block-start: 10px;
+    inset-inline-end: 12px;
+}
+
+.product-gallery__zoom {
+    inset-block-start: 10px;
+    inset-inline-end: 60px;
+}
+
+.product-media__tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.product-media__tab,
+.product-model__controls button {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.product-media__tab.is-on,
+.product-model__controls button:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+}
+
+.product-media__tab:focus-visible,
+.product-model__controls button:focus-visible {
+    outline: 2px solid var(--hazard);
+    outline-offset: 2px;
+}
+
+.product-model {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1.4 / 1;
+    border-radius: 28px;
+    background: var(--card);
+}
+
+.product-model[hidden] {
+    display: none;
+}
+
+.product-model__canvas,
+.product-model__canvas canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.product-model__canvas canvas {
+    display: block;
+    touch-action: none;
+}
+
+.product-model__status {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 24px;
+    color: var(--muted);
+    text-align: center;
+}
+
+.product-model__status[hidden] {
+    display: none;
+}
+
+.product-model__status[data-state="error"] {
+    color: #a8322c;
+}
+
+.product-model__controls {
+    position: absolute;
+    inset-inline: 12px;
+    bottom: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.product-model__controls button {
+    padding: 7px 10px;
+}
+
+@media (max-width: 460px) {
+    .product-model__controls {
+        inset-inline: 8px;
+        bottom: 8px;
+    }
+
+    .product-model__controls button {
+        flex: 1;
+        padding-inline: 4px;
+        font-size: 12px;
+    }
+}
+
+.product__price {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 3vw, 40px);
+    margin: 4px 0 14px;
+}
+
+.product__desc {
+    color: var(--muted);
+    line-height: 1.95;
+    margin-bottom: 22px;
+}
+
+/* ------------------------------------------------------------------- forms */
+
+.field {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.field > span,
+.field__label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+input[type='text'],
+input[type='email'],
+input[type='tel'],
+input[type='number'],
+input[type='password'],
+select,
+textarea {
+    width: 100%;
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px 14px;
+    font: inherit;
+}
+
+textarea {
+    min-height: 96px;
+    resize: vertical;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 1px;
+}
+
+.swatches,
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.swatch input,
+.chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.swatch__dot {
+    display: block;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    cursor: pointer;
+}
+
+.swatch input:checked + .swatch__dot {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px #fff inset;
+}
+
+.swatch input:focus-visible + .swatch__dot {
+    outline: 3px solid var(--hazard);
+    outline-offset: 2px;
+}
+
+.chip__text {
+    display: inline-block;
+    padding: 8px 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    background: #fff;
+}
+
+.chip input:checked + .chip__text {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+}
+
+.chip input:focus-visible + .chip__text {
+    outline: 3px solid var(--hazard);
+    outline-offset: 2px;
+}
+
+.button {
+    display: inline-block;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 11px 22px;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.button:hover {
+    border-color: var(--ink);
+}
+
+.button:focus-visible {
+    outline: 3px solid var(--hazard);
+    outline-offset: 2px;
+}
+
+.button--primary {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+}
+
+.button--primary:hover {
+    background: #000;
+}
+
+.button--danger {
+    color: #a8322c;
+    border-color: #e5c4c1;
+}
+
+.button--block {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+/* ------------------------------------------------------------------ alerts */
+
+.alert {
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.alert ul {
+    margin: 6px 18px 0;
+}
+
+.alert--error {
+    background: #fbeceb;
+    border: 1px solid #eccbc8;
+    color: #8c2b26;
+}
+
+.alert--warn {
+    background: #fdf5e2;
+    border: 1px solid #ecdcae;
+    color: #7a5a12;
+}
+
+.alert--ok {
+    background: #ecf6ee;
+    border: 1px solid #c8e2ce;
+    color: #2c6438;
+}
+
+/* -------------------------------------------------------------------- cart */
+
+.lines {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 26px;
+}
+
+.line {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 12px 16px;
+}
+
+.line__media {
+    width: 84px;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    background: var(--card);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+}
+
+.line__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.line__meta {
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.line__swatch {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    vertical-align: -2px;
+    margin-inline-end: 4px;
+}
+
+.line__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.line__actions input[type='number'] {
+    width: 74px;
+}
+
+.totals {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    font-size: 18px;
+    font-weight: 900;
+    flex-wrap: wrap;
+}
+
+.checkout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.7fr);
+    gap: clamp(20px, 3vw, 44px);
+    align-items: start;
+}
+
+@media (max-width: 860px) {
+    .checkout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: clamp(16px, 2.4vw, 28px);
+}
+
+.panel h2 {
+    font-size: 17px;
+    margin-bottom: 16px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--line);
+}
+
+.summary-row:last-of-type {
+    border-bottom: 0;
+}
+
+.empty {
+    color: var(--muted);
+    padding: 40px 0;
+}
+
+/* -------------------------------------------------------------- design tool */
+
+.uploader {
+    border: 2px dashed var(--line);
+    border-radius: 18px;
+    padding: 22px;
+    text-align: center;
+    background: #fff;
+}
+
+.uploader.is-over {
+    border-color: var(--ink);
+}
+
+.uploader__hint {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+    margin-top: 6px;
+}
+
+.uploader__preview {
+    margin-top: 14px;
+    display: none;
+}
+
+.uploader__preview img {
+    max-width: 190px;
+    max-height: 190px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+}
+
+.uploader.has-file .uploader__preview {
+    display: block;
+}
+
+.catalog__clear {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* =========================================================== the shop, part 3 */
+
+.page--narrow {
+    max-width: 900px;
+}
+
+.field__row-between {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.linky {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.linky:hover {
+    color: var(--ink);
+}
+
+.linky--danger {
+    color: #a8322c;
+}
+
+.product__saved {
+    color: #2f6f45;
+    font-size: 14px;
+    margin: -6px 0 12px;
+}
+
+/* --------------------------------------------------------------- size chart */
+
+.size-chart {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.size-chart caption {
+    caption-side: bottom;
+    color: var(--muted);
+    font-size: 12px;
+    padding-top: 8px;
+    text-align: start;
+}
+
+.size-chart th,
+.size-chart td {
+    padding: 8px 12px;
+    text-align: start;
+    border-bottom: 1px solid var(--line);
+}
+
+.size-chart thead th {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.size-chart tbody tr:last-child th,
+.size-chart tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+/* ------------------------------------------------------ ready-made designs */
+
+.designs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 10px;
+}
+
+.design {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.design input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.design__box {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: #fff;
+}
+
+.design__box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.design input:checked + .design__box {
+    border-color: var(--ink);
+    box-shadow: inset 0 0 0 3px #fff;
+}
+
+.design input:focus-visible + .design__box {
+    outline: 2px solid var(--hazard);
+    outline-offset: 2px;
+}
+
+.design__blank {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 4px;
+}
+
+.design__name {
+    font-size: 12px;
+}
+
+.design__extra {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ specs */
+
+.specs {
+    margin-top: 28px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+}
+
+.specs__title {
+    font-size: 15px;
+    margin-bottom: 12px;
+}
+
+.specs__list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.specs__list > div {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 12px;
+    font-size: 14px;
+}
+
+.specs__list dt {
+    color: var(--muted);
+}
+
+.specs__list dd {
+    margin: 0;
+}
+
+/* ------------------------------------------------------------ upload page */
+
+.upload {
+    display: grid;
+    gap: 20px;
+}
+
+.upload__step {
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: #fff;
+    padding: clamp(16px, 2.4vw, 26px);
+    margin: 0;
+}
+
+.upload__step legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 900;
+    padding: 0 8px;
+}
+
+.upload__num {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 13px;
+}
+
+.upload__opt {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.upload input[type='file'],
+.upload select,
+.upload textarea,
+.checkout textarea,
+.checkout input,
+.track-form input {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px 14px;
+}
+
+.upload textarea,
+.checkout textarea {
+    resize: vertical;
+}
+
+/* The team grid: the whole reason a company can order here in one pass. */
+.qty-grid__wrap {
+    overflow-x: auto;
+    margin: 14px 0;
+}
+
+.qty-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+/*
+ * A fieldset's min-inline-size is min-content in every browser, and the cascade
+ * does not reach it unless it is named. Without this the step is as wide as the
+ * widest thing in it however the table is sized, and the page scrolls sideways
+ * on a phone -- which is what the table's old 460px floor was doing.
+ */
+.upload__step {
+    min-width: 0;
+}
+
+.qty-grid caption {
+    caption-side: top;
+    text-align: start;
+    color: var(--muted);
+    font-size: 12px;
+    padding-bottom: 8px;
+}
+
+.qty-grid th,
+.qty-grid td {
+    padding: 6px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+}
+
+.qty-grid tbody th {
+    text-align: start;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.qty-grid input {
+    width: 58px;
+    font: inherit;
+    text-align: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 4px;
+    background: #fff;
+    color: inherit;
+}
+
+.qty-grid__dot {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    vertical-align: -2px;
+    margin-inline-end: 6px;
+}
+
+/* The size code beside each input, for when the header row is gone. */
+.qty-grid__size {
+    display: none;
+}
+
+/*
+ * Below this a row of size columns cannot be read, let alone typed into: six
+ * columns of a 58px input do not fit 360px however the table is sized.
+ *
+ * The table stops being a table and each colour becomes its own block, with its
+ * sizes laid out as a flexible grid that fits as many per line as the screen
+ * allows and drops to one when it allows one. minmax(min(140px, 100%), 1fr) is
+ * what keeps that from overflowing: the min() floor lets a cell go narrower
+ * than 140px rather than forcing the track open on a screen that has less.
+ *
+ * The header row goes with the table, so each cell carries its own size label;
+ * the inputs' aria-labels already named colour and size and are unchanged.
+ */
+@media (max-width: 620px) {
+    .qty-grid,
+    .qty-grid tbody,
+    .qty-grid tr,
+    .qty-grid td {
+        display: block;
+    }
+
+    .qty-grid thead {
+        display: none;
+    }
+
+    /* A table-caption inside a table that is no longer a table shrinks to fit
+       its longest word and sets the sentence one word per line. */
+    .qty-grid caption {
+        display: block;
+        padding-bottom: 12px;
+    }
+
+    /* The row is the grid, and the colour's name spans it as a heading. */
+    .qty-grid tbody tr {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+
+    .qty-grid tbody th {
+        grid-column: 1 / -1;
+        display: block;
+        padding: 0;
+        border-bottom: 0;
+        font-weight: 700;
+    }
+
+    .qty-grid td {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0;
+        border-bottom: 0;
+        min-width: 0;
+    }
+
+    .qty-grid__size {
+        display: inline-block;
+        color: var(--muted);
+        min-width: 3ch;
+    }
+
+    /* The input takes the rest of the cell instead of a fixed 58px, so a
+       narrow track shrinks it rather than pushing the page open. */
+    .qty-grid input {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+    }
+}
+
+/* ------------------------------------------------------------ cart totals */
+
+.totals {
+    display: block;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+.totals__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 0;
+}
+
+.totals__row--good {
+    color: #2f6f45;
+}
+
+.totals__row--grand {
+    border-top: 1px solid var(--line);
+    margin-top: 6px;
+    padding-top: 12px;
+    font-size: 19px;
+    font-weight: 900;
+}
+
+.totals__hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 2px 0 8px;
+}
+
+.line {
+    grid-template-columns: 84px minmax(0, 1fr) auto auto auto;
+}
+
+@media (max-width: 640px) {
+    .line {
+        grid-template-columns: 64px minmax(0, 1fr) auto;
+    }
+}
+
+.line__name {
+    font-weight: 700;
+    color: inherit;
+    text-decoration: none;
+}
+
+.line__unit,
+.line__qty-static {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.line__discount {
+    color: #2f6f45;
+    margin-inline-start: 8px;
+}
+
+.line__qty input {
+    width: 68px;
+    font: inherit;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+    background: #fff;
+    color: inherit;
+}
+
+.line__total {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* --------------------------------------------------------- checkout extras */
+
+.checkout__fields {
+    display: grid;
+    gap: 4px;
+}
+
+.checkout__summary {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: clamp(16px, 2.4vw, 26px);
+    position: sticky;
+    top: 20px;
+}
+
+.checkout__pay {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 12px 0;
+}
+
+/*
+ * Beside the button, not in the footer. This is the last moment somebody can
+ * change their mind about a shirt that cannot be sold to anyone else, and a
+ * notice nobody reads is the first sentence of a refund argument.
+ */
+.checkout__returns {
+    background: #fdf5e2;
+    border: 1px solid #ecdcae;
+    color: #7a5a12;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.agreement {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: clamp(16px, 2.4vw, 24px);
+    margin-bottom: 22px;
+}
+
+.agreement__title {
+    font-size: 15px;
+    margin-bottom: 14px;
+}
+
+.agreement__list {
+    display: grid;
+    gap: 14px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.agreement__item {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-size: 14px;
+}
+
+.agreement__shot {
+    width: 76px;
+    height: 76px;
+    border-radius: 12px;
+    background: repeating-conic-gradient(#eae7e1 0% 25%, #fbfaf8 0% 50%) 0 0 / 12px 12px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    flex: none;
+}
+
+.agreement__shot img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* -------------------------------------------------------- tracking, orders */
+
+.track-form {
+    display: grid;
+    gap: 4px;
+    max-width: 420px;
+}
+
+.track {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 26px;
+    gap: 4px;
+}
+
+.track__step {
+    flex: 1;
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    position: relative;
+}
+
+.track__step::before {
+    content: '';
+    position: absolute;
+    top: 7px;
+    inset-inline: 50% -50%;
+    height: 2px;
+    background: var(--line);
+}
+
+.track__step:last-child::before {
+    display: none;
+}
+
+.track__dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    background: var(--paper);
+    position: relative;
+    z-index: 1;
+}
+
+.track__step.is-done {
+    color: var(--ink);
+}
+
+.track__step.is-done .track__dot {
+    background: var(--ink);
+    border-color: var(--ink);
+}
+
+.track__label {
+    text-align: center;
+}
+
+.badge {
+    display: inline-block;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    background: #fff;
+    white-space: nowrap;
+}
+
+.badge--delivered,
+.badge--shipped {
+    color: #2f6f45;
+    border-color: #b6d6c2;
+}
+
+.badge--cancelled,
+.badge--refunded {
+    color: #a8322c;
+    border-color: #e8cbc8;
+}
+
+.topbar__account {
+    color: inherit;
+    text-decoration: none;
+    font-size: 14px;
+    margin-inline-start: auto;
+    margin-inline-end: 14px;
+}
+
+.topbar__account:hover {
+    text-decoration: underline;
+}
+
+/*
+ * `hidden` is an attribute the UA stylesheet turns into display:none -- and any
+ * later `display` rule beats it, because the UA sheet is the weakest source.
+ * Every flex or grid container carrying `hidden` is therefore visible unless
+ * this exists. The hero has its own copy of this rule; this is the site's.
+ */
+[hidden] {
+    display: none !important;
+}
+
+/* ========================================= Tailored catalogue and product */
+
+:root {
+    --radius-card: 28px;
+    --radius-inner: 20px;
+    --radius-pill: 999px;
+    --bg: #f3f1ed;
+    --surface: #ffffff;
+    --ink: #111111;
+    /* The same ink, stepped back. For marks that are present but not the one
+       being pointed at -- an unvisited dot, a rule between rows. */
+    --ink-soft: rgba(17, 17, 17, 0.22);
+    --muted: #8a8a85;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.page--catalog,
+.page--product {
+    width: min(100%, 1440px);
+    margin-inline: auto;
+    background: var(--bg);
+}
+
+.page--catalog {
+    padding-top: clamp(32px, 5vw, 72px);
+}
+
+.catalog__head {
+    align-items: end;
+    margin-bottom: 24px;
+}
+
+.catalog__title {
+    display: grid;
+    gap: 2px;
+    font-family: var(--font-body);
+    font-size: clamp(32px, 4vw, 56px);
+    line-height: 1.15;
+}
+
+.catalog__title strong {
+    font-weight: 900;
+}
+
+.catalog__title em {
+    color: var(--muted);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.72em;
+    font-weight: 400;
+}
+
+/* catalog cards — start
+ *
+ * Every selector below is scoped to .page--catalog, which only catalog.php
+ * renders. The classes themselves are already exclusive to that page and to
+ * design-card.php (nothing else requires it), so the scope is belt and
+ * braces: a page that reuses .product-card later gets the plain card, not
+ * this one, and nothing here can leak.
+ *
+ * The shape of the photo -- rounded, with the price pill sitting in a notch
+ * cut out of its bottom inline-end corner -- is finished by
+ * /assets/js/catalog-cards.js, which measures the rendered pill and writes a
+ * clip-path. The border-radius here is what a browser without clip-path:
+ * path() keeps, and it is a fine card on its own.
+ *
+ * The reset in hero.css is `* { box-sizing; margin: 0; padding: 0 }`. It only
+ * zeroes margin and padding, so every spacing value below is stated outright
+ * rather than assumed, and nothing here relies on a UA default it would have
+ * removed.
+ */
+
+.page--catalog {
+    /*
+     * The page's own inline padding, restated as a value the chip row can
+     * subtract. It has to track .page and the 760px override below it,
+     * because a bleed that guesses wrong leaves the last chip floating
+     * short of the edge instead of being cut by it.
+     */
+    --cat-pad: clamp(14px, 2.4vw, 40px);
+
+    --cat-pill: 999px;
+    --cat-search-h: 56px;
+    --cat-chip-h: 46px;
+    --cat-surface: #fff;
+    --cat-soft: #8a8a85;
+}
+
+/* ------------------------------------------------------ the search row */
+
+.page--catalog .catalog__bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--cat-search-h);
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page--catalog .search-bar {
+    border-radius: var(--cat-pill);
+    background: var(--cat-surface);
+    height: var(--cat-search-h);
+    padding-inline: 20px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.page--catalog .search-bar svg {
+    flex: none;
+    fill: none;
+    stroke: var(--cat-soft);
+    stroke-width: 2;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+.page--catalog .search-bar input {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-weight: 500;
+    color: inherit;
+}
+
+.page--catalog .search-bar input::placeholder {
+    color: var(--cat-soft);
+    opacity: 1;
+}
+
+/* The clear-search link sits under the row rather than inside the pill. */
+.page--catalog .catalog__clear {
+    grid-column: 1 / -1;
+}
+
+.page--catalog .filter-btn {
+    width: var(--cat-search-h);
+    height: var(--cat-search-h);
+    border-radius: 50%;
+    background: var(--ink);
+    color: #fff;
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.page--catalog .filter-btn svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+/* The native select covers the circle, invisible, so the whole disc opens it. */
+.page--catalog .filter-btn select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* ----------------------------------------------------------- the chips */
+
+/*
+ * Bled out to the page's inline padding so the last chip is cut by the edge
+ * of the screen instead of ending short of it -- that clipped chip is the
+ * only thing telling anyone the row scrolls.
+ */
+.page--catalog .filter-chips {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 22px;
+    margin-inline: calc(var(--cat-pad) * -1);
+    padding-inline: var(--cat-pad);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+}
+
+.page--catalog .filter-chips::-webkit-scrollbar {
+    display: none;
+}
+
+.page--catalog .filter-chip {
+    display: grid;
+    place-items: center;
+    height: var(--cat-chip-h);
+    padding-inline: 26px;
+    border: 0;
+    border-radius: var(--cat-pill);
+    background: var(--cat-surface);
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-decoration: none;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+}
+
+.page--catalog .filter-chip[aria-selected="true"] {
+    background: var(--ink);
+    color: #fff;
+    font-weight: 700;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .page--catalog .filter-chip {
+        transition: background-color 180ms ease, color 180ms ease;
+    }
+}
+
+/* ------------------------------------------------------------ the grid */
+
+.page--catalog .products-grid {
+    display: grid;
+    /* minmax(0, ...), not 1fr: a long product name is nowrap, and on a plain
+       1fr it widens its own column and pushes the page into a sideways
+       scroll on a narrow phone. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+    row-gap: 24px;
+}
+
+@media (min-width: 768px) {
+    .page--catalog .products-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1200px) {
+    .page--catalog .products-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/*
+ * The card is not a box. It is a transparent link holding one rounded image
+ * and, under it, bare text sitting straight on the page. No background, no
+ * border, no shadow, no padding -- the cream of the page runs between the
+ * cards and behind every line of the captions, and it runs through the notch
+ * under the price too.
+ */
+.page--catalog .product-card {
+    position: relative;
+    display: block;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+}
+
+/*
+ * The wrapper carries no clip of its own. __media below is the only thing
+ * that clips, and the price sits outside it -- inside the very region the
+ * clip removes, which is why it cannot be a child of it.
+ */
+.page--catalog .product-card__media-wrap {
+    position: relative;
+    display: block;
+}
+
+/*
+ * --R is written onto this element by catalog-cards.js, which derives it from
+ * the tile's measured width along with every other length of the notch. The
+ * literal in var() is only what a browser paints before the script has run.
+ */
+.page--catalog .product-card__media {
+    border-radius: var(--R, 24px);
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    position: relative;
+    display: block;
+    background: #e5e2dc;
+}
+
+.page--catalog .product-card__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Stands in for a photo the shop has not uploaded yet. */
+.page--catalog .product-card__placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    text-align: center;
+    color: var(--cat-soft);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+/*
+ * Flush into the corner of the tile: its bottom edge on the tile's bottom
+ * edge, its side on the tile's side, no offset at all. The white band the
+ * notch leaves is on the two inner sides only.
+ *
+ * The box is a constant. catalog-cards.js sizes it from the tile's width and
+ * nothing else -- not from the price inside it -- so every card in the grid
+ * carries the same pill in the same place, and the notch cut for it is the
+ * same shape on all of them. No padding and no white-space here: either one
+ * would let a long price widen the box, which is exactly what this is for.
+ */
+.page--catalog .product-card__price {
+    position: absolute;
+    bottom: 0;
+    inset-inline-end: 0;
+    width: var(--badge-w, 53px);
+    height: var(--badge-h, 26px);
+    border-radius: var(--badge-r, 13px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--ink);
+    color: #fff;
+    font-weight: 700;
+    line-height: 1;
+    z-index: 2;
+}
+
+/*
+ * The price itself. It keeps its natural width so the script can measure it
+ * and scale the type down to fit; the box never moves to accommodate it.
+ */
+.page--catalog .product-card__price-value {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* Out of the pill, which carries a price and nothing else, and onto the
+   caption line where the rest of the card's words are. */
+.page--catalog .product-card__sold {
+    flex: none;
+    color: var(--cat-soft);
+    font-size: 13px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.page--catalog .product-card__title {
+    margin-top: 12px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.page--catalog .product-card__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.page--catalog .product-card__meta {
+    margin-top: 4px;
+    font-size: 15px;
+    color: var(--cat-soft);
+    display: -webkit-box;
+    overflow: hidden;
+    line-height: 1.6;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.page--catalog .product-card__swatches {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.page--catalog .product-card__swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid #e5e2dc;
+    flex: none;
+}
+
+/* The invitation keeps the shape of a card; only its tile is tinted. */
+.page--catalog .product-card--design {
+    display: block;
+    min-width: 0;
+}
+
+.page--catalog .product-card__media--design {
+    display: grid;
+    place-items: center;
+    background: #e7e2d3;
+    color: #7a6a2e;
+}
+
+.page--catalog .product-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.page--catalog .product-card__actions .button {
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+/* Mirrors the .page--catalog padding override further down this file. */
+@media (max-width: 760px) {
+    .page--catalog {
+        --cat-pad: 16px;
+    }
+}
+
+/*
+ * Only the caption needs a hand on a small screen now. The tile, the pill,
+ * the notch and the price inside it are all fractions of the tile's width
+ * already, so they arrive at the right size on their own.
+ */
+@media (max-width: 400px) {
+    .page--catalog .product-card__title {
+        font-size: 15px;
+    }
+
+    .page--catalog .product-card__meta {
+        font-size: 13px;
+    }
+}
+
+/* catalog cards — end */
+
+.page--catalog .search-bar:focus-within,
+.page--catalog .filter-btn:focus-within,
+.page--catalog .filter-chip:focus-visible,
+.page--catalog .product-card:focus-visible,
+.page--product button:focus-visible,
+.page--product a:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------- product detail */
+
+/* product detail (pdp) — start
+ *
+ * One column, read top to bottom: the bar, the photo, the name, the sizes,
+ * the colours, the folded description, and a bottom bar that stays put while
+ * the page scrolls under it.
+ *
+ * The photo tile is the catalogue card's tile, not a lookalike:
+ * /assets/js/product-media.js imports geometry(), mediaPath() and fitPrice()
+ * out of catalog-cards.js and writes --R, --badge-w, --badge-h, --badge-r and
+ * the clip-path onto the elements below. Not one of those lengths is written
+ * here -- this file only reads them back, exactly as the catalogue does.
+ *
+ * There is no rating line: the database has no rating column, so there is
+ * nothing true to print. It comes back when reviews do.
+ */
+
+.page--product {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/*
+ * A product page is one column at every width. The cap is what keeps the
+ * photo from growing to fill a desktop monitor -- and, because every length
+ * of the notch is a fraction of that measured width, what keeps the badge the
+ * same size on a phone and on a laptop.
+ */
+.pdp {
+    width: min(100%, 560px);
+    margin-inline: auto;
+}
+
+/* ------------------------------------------------------------- the top bar */
+
+/*
+ * Three columns, not flex: the middle one is what centres the title, and it
+ * stays centred whether or not anything ever sits in the third column. The
+ * back button is first in the DOM, so in RTL it lands on the right.
+ */
+.pdp__topbar {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 0 18px;
+}
+
+.pdp__back {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.pdp__back svg {
+    width: 20px;
+    height: 20px;
+}
+
+.pdp__topbar-title {
+    margin: 0;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* --------------------------------------------------------------- the photo */
+
+/*
+ * The wrapper carries no clip. __media below is the only thing that clips,
+ * and the price sits outside it -- inside the very region the clip removes,
+ * which is why it cannot be a child of it. Same arrangement as a card.
+ */
+.pdp__media-wrap {
+    position: relative;
+    display: block;
+}
+
+/*
+ * --R is written onto this element by product-media.js, derived from the
+ * tile's measured width along with every other length of the notch. The
+ * literal in var() is only what a browser paints before the script has run.
+ */
+.pdp__media {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--R, 24px);
+    overflow: hidden;
+    background: #e5e2dc;
+}
+
+.pdp__media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Stands in for a photo the shop has not uploaded yet. */
+.pdp__media-placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    text-align: center;
+}
+
+/*
+ * Flush into the corner: its bottom edge on the tile's bottom edge, its side
+ * on the tile's side, no offset at all. The band the notch leaves is on the
+ * two inner sides only.
+ *
+ * The box is a constant. product-media.js sizes it from the tile's width and
+ * nothing else -- not from the price inside it -- so the pill here is the
+ * same pill the catalogue draws. No padding and no white-space: either one
+ * would let a long price widen the box, which is exactly what this prevents.
+ */
+.pdp__price {
+    position: absolute;
+    z-index: 2;
+    bottom: 0;
+    inset-inline-end: 0;
+    display: flex;
+    width: var(--badge-w, 53px);
+    height: var(--badge-h, 26px);
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: var(--badge-r, 13px);
+    background: var(--ink);
+    color: #fff;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Keeps its natural width so the script can measure it and scale the type
+   down to fit; the box never moves to accommodate it. */
+.pdp__price-value {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* A product with no photo at all still has to print a price somewhere. */
+.pdp__price-plain {
+    margin: 12px 0 0;
+    font-size: 22px;
+    font-weight: 900;
+}
+
+/* --------------------------------------------------------------- the track */
+
+/*
+ * A real horizontal scroller, clipped by .pdp__media above it. The phone's
+ * drag is the browser's own -- momentum, rubber-banding and snapping included
+ * -- and every button on the page moves this same scroller rather than
+ * animating anything itself.
+ *
+ * overscroll-behavior-x stops a swipe that runs out of slides from turning
+ * into the browser's back gesture, which is the one way a customer can lose
+ * the page by looking at a photo.
+ */
+.pdp__track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+}
+
+.pdp__track::-webkit-scrollbar {
+    display: none;
+}
+
+.pdp__slide {
+    position: relative;
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: center;
+}
+
+.pdp__slide-open {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+}
+
+/* --------------------------------------------------------- dots and thumbs */
+
+/*
+ * Two readings of one index. The dots are the phone's, the thumbnails the
+ * desktop's, and the desktop rules further down swap which is on screen.
+ * Both are real buttons carrying the slide number they move to.
+ */
+.pdp__dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    min-height: 12px;
+    margin-top: 14px;
+}
+
+.pdp__dot {
+    display: grid;
+    width: 7px;
+    height: 7px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ink-soft);
+    cursor: pointer;
+    transition: background-color 0.18s ease;
+}
+
+.pdp__dot.is-on {
+    background: var(--ink);
+}
+
+/*
+ * The 3D slide's dot is the cube rather than a disc: it is not another
+ * photograph, and a row of identical dots would not say so. It keeps the
+ * row's rhythm by sitting in a box the same height as a dot.
+ */
+.pdp__dot--model {
+    width: 15px;
+    height: 15px;
+    border-radius: 0;
+    background: none;
+    color: var(--ink-soft);
+    transition: color 0.18s ease;
+}
+
+.pdp__dot--model svg {
+    width: 15px;
+    height: 15px;
+}
+
+.pdp__dot--model.is-on {
+    background: none;
+    color: var(--ink);
+}
+
+/* Desktop only. Hidden here rather than absent so the markup is one shape. */
+.pdp__thumbs {
+    display: none;
+}
+
+/* -------------------------------------------------------------- the arrows */
+
+/*
+ * Desktop only: a phone has the drag, and two buttons sat over the photo on a
+ * 360px screen cover the thing they are there to help you look at.
+ */
+.pdp__arrow {
+    display: none;
+}
+
+/* ------------------------------------------------------------ the 3D slide */
+
+.pdp__slide--model {
+    background: var(--surface);
+    touch-action: pan-x;
+}
+
+.pdp__canvas {
+    position: absolute;
+    inset: 0;
+}
+
+.pdp__canvas canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/*
+ * The ground ring: an ellipse 72% of the slide across, drawn over the scene
+ * rather than in it. preserveAspectRatio is off so the 36-unit radius is
+ * exactly 72% of whatever width the slide has, and the stroke is told not to
+ * scale with the box so 1.5 stays 1.5 real pixels.
+ */
+.pdp__ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: var(--ink);
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+/*
+ * The handle sits on the bottom of the ring -- cy 78 plus ry 7 -- so it reads
+ * as resting on the ground the shirt is standing on rather than floating in
+ * front of it.
+ */
+.pdp__spin {
+    position: absolute;
+    z-index: 2;
+    top: 85%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 7px 14px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--ink);
+    color: #fff;
+    transform: translate(-50%, -50%);
+    cursor: ew-resize;
+    touch-action: none;
+    /*
+     * The two chevrons point away from each other -- the handle goes both
+     * ways -- and that pairing is physical, not linguistic. Without this the
+     * RTL flex order swaps them so they point at each other instead.
+     *
+     * It is also why the centring above is left/translateX rather than the
+     * logical pair: inset-inline-start resolves against the element's OWN
+     * direction, so this declaration would silently move the handle a full
+     * width off centre if the offset were written logically.
+     */
+    direction: ltr;
+}
+
+.pdp__spin svg {
+    width: 14px;
+    height: 14px;
+}
+
+/*
+ * One pulse the first time the slide is reached. It is a handle that does not
+ * look like a scrollbar, on a picture that does not look draggable, so it
+ * says so once and then never again -- the class comes off at the first
+ * pointer or key.
+ */
+@keyframes pdp-spin-pulse {
+    from {
+        box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.38);
+    }
+
+    to {
+        box-shadow: 0 0 0 14px rgba(17, 17, 17, 0);
+    }
+}
+
+.pdp__spin.is-hinting {
+    animation: pdp-spin-pulse 1.6s ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pdp__spin.is-hinting {
+        animation: none;
+    }
+
+    .pdp__track {
+        scroll-behavior: auto;
+    }
+}
+
+.pdp__stage-status {
+    position: absolute;
+    z-index: 3;
+    inset-inline: 0;
+    bottom: 14%;
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+/* ---------------------------------------------------------- name and body */
+
+.pdp__name {
+    margin: 18px 0 0;
+    font-family: var(--font-body);
+    font-size: clamp(20px, 4.6vw, 24px);
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.pdp__saved {
+    margin: 8px 0 0;
+    color: #2f6f45;
+    font-size: 14px;
+}
+
+.pdp__field {
+    margin-top: 22px;
+}
+
+.pdp__field-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.pdp__field-label {
+    display: block;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.pdp__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+/* The radio is moved off-screen, not display:none -- it still has to be
+   reachable by keyboard and readable to a screen reader. */
+.pdp__size input,
+.pdp__color input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/*
+ * A fixed 44 by 44 whatever the code inside it is, so a row of S M L XL is a
+ * row of identical circles rather than four pills of four widths. 44 is also
+ * the smallest comfortable tap target.
+ */
+.pdp__size-text {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.pdp__size input:checked + .pdp__size-text {
+    background: var(--ink);
+    color: #fff;
+}
+
+.pdp__size input:focus-visible + .pdp__size-text {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+}
+
+/* A solid disc of the product's own colour. The hex is the one thing the
+   database supplies, handed in as --swatch; the drawing is all here. */
+.pdp__color-dot {
+    display: block;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--swatch, #ccc);
+    cursor: pointer;
+    /* A near-white shirt on an off-white page needs an edge or the option is
+       not on the screen at all. Inset, so the disc stays 26 across. */
+    box-shadow: inset 0 0 0 1px rgba(17, 17, 17, 0.12);
+}
+
+/* The ring sits clear of the disc rather than on it, so a white shirt and a
+   black one are marked the same way. */
+.pdp__color input:checked + .pdp__color-dot {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+}
+
+.pdp__color input:focus-visible + .pdp__color-dot {
+    outline: 3px dashed var(--ink);
+    outline-offset: 3px;
+}
+
+/* The colour row needs the ring's offset back as breathing room. */
+.pdp__field--colors .pdp__options {
+    gap: 16px;
+    padding: 5px 0;
+}
+
+/* ------------------------------------------------------ the folded details */
+
+.pdp__details {
+    margin-top: 26px;
+    border-top: 1px solid #e2dfd8;
+    border-bottom: 1px solid #e2dfd8;
+}
+
+.pdp__details-toggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: start;
+    cursor: pointer;
+}
+
+.pdp__details-arrow {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    transition: transform 0.2s ease;
+}
+
+.pdp__details-toggle[aria-expanded="true"] .pdp__details-arrow {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pdp__details-arrow {
+        transition: none;
+    }
+}
+
+.pdp__details-body {
+    padding-bottom: 20px;
+}
+
+.pdp__desc {
+    margin: 0;
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.9;
+}
+
+.pdp__specs {
+    display: grid;
+    gap: 10px;
+    margin: 16px 0 0;
+}
+
+.pdp__specs > div {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.pdp__specs dt {
+    color: var(--muted);
+}
+
+.pdp__specs dd {
+    margin: 0;
+    font-weight: 700;
+    text-align: end;
+}
+
+.pdp__hint {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+/* --------------------------------------------------------- the bottom bar */
+
+/*
+ * Sticky rather than fixed: it pins to the bottom of the viewport for the
+ * whole scroll, but it is still in the flow, so it cannot end up parked over
+ * the footer and nothing underneath needs a spacer to compensate for it.
+ */
+.pdp__bar {
+    position: sticky;
+    z-index: 60;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    margin-top: 24px;
+    padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg);
+}
+
+/* The bar is opaque, so without this the line of text passing under it is cut
+   through the middle of its glyphs. It fades out instead. */
+.pdp__bar::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 100%;
+    height: 20px;
+    background: linear-gradient(to top, var(--bg), rgba(243, 241, 237, 0));
+    pointer-events: none;
+}
+
+.pdp__qty {
+    display: grid;
+    grid-template-columns: 36px minmax(34px, auto) 36px;
+    height: 52px;
+    align-items: center;
+    padding: 0 6px;
+    border: 1px solid #e2dfd8;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+}
+
+.pdp__qty button {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: #eeece8;
+    color: var(--ink);
+    font: inherit;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pdp__qty input {
+    min-width: 0;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 900;
+    text-align: center;
+    appearance: textfield;
+}
+
+.pdp__qty input::-webkit-inner-spin-button,
+.pdp__qty input::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+}
+
+.pdp__add {
+    height: 52px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pdp__add[disabled] {
+    background: var(--muted);
+    cursor: not-allowed;
+}
+
+/*
+ * 360px is the narrowest phone the shop sees. The quantity box is the only
+ * thing in this row with a floor under its width, so it is the only thing
+ * that can push the row past the screen -- it is what gives.
+ */
+@media (max-width: 380px) {
+    .pdp__qty {
+        grid-template-columns: 32px minmax(26px, auto) 32px;
+        padding: 0 4px;
+    }
+
+    .pdp__add {
+        padding: 0 12px;
+        font-size: 14px;
+    }
+}
+
+/* ------------------------------------------------------ ready-made prints */
+
+/* The grid itself is shared with the upload page and the admin; only the
+   spacing and the chosen-tile marker are this page's. */
+.page--product .designs {
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.page--product .design__box {
+    border-width: 1px;
+    border-radius: var(--radius-inner);
+}
+
+.page--product .design input:checked + .design__box {
+    border: 2px solid var(--ink);
+    box-shadow: none;
+}
+
+/* ------------------------------------------------- the tablet in the middle */
+
+/*
+ * Still one column -- two would give each of them a width no one would want
+ * -- but no longer the phone's 560. A tablet held in landscape has room for a
+ * larger photo without it becoming the whole screen.
+ */
+@media (min-width: 600px) and (max-width: 899px) {
+    .pdp {
+        width: min(100%, 620px);
+    }
+}
+
+/* ------------------------------------------------------------- the desktop */
+
+/*
+ * Two columns: the photo on the inline-start side of the grid -- the right,
+ * in RTL -- and everything that is read and chosen beside it.
+ *
+ * The reading column is one grid item, .pdp__col, which is the whole reason
+ * that wrapper exists in the markup. Placing six loose elements into a second
+ * column would put each of them in its own grid row opposite the photo, and
+ * the photo would have to be told how many rows to span -- a number that
+ * changes with a notice or an error message.
+ */
+@media (min-width: 900px) {
+    .pdp {
+        display: grid;
+        width: 100%;
+        max-width: 1180px;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 48px;
+        align-items: start;
+        margin-inline: auto;
+    }
+
+    /*
+     * Across the top of both, and aligned to the start of the container
+     * rather than the middle of the screen: at this width a centred title
+     * would sit above the gap between the columns, pointing at nothing.
+     */
+    .pdp__topbar {
+        grid-column: 1 / -1;
+        grid-template-columns: 44px auto;
+        justify-content: start;
+        gap: 14px;
+        padding: 22px 0 26px;
+    }
+
+    .pdp__topbar-title {
+        text-align: start;
+    }
+
+    /*
+     * The cap is on the media column itself, not on the tile inside it. The
+     * price pill is positioned against .pdp__media-wrap, so capping the tile
+     * alone would leave the wrapper full-column-width and the pill would sit
+     * out at the column's edge with a band of page between it and the photo.
+     * Capping the column keeps wrapper and tile the same box, which is what
+     * holds the pill flush into the notch.
+     */
+    .pdp__media-area {
+        grid-column: 1;
+        max-width: 560px;
+    }
+
+    /* ------------------------------------ thumbnails and arrows, not dots */
+
+    /*
+     * A desktop has the room to show what every slide is rather than only how
+     * many there are, and no drag to move between them -- so the dots give
+     * way to thumbnails, and the arrows appear.
+     */
+    .pdp__dots {
+        display: none;
+    }
+
+    .pdp__thumbs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .pdp__thumb {
+        display: grid;
+        width: 64px;
+        height: 64px;
+        flex: none;
+        place-items: center;
+        overflow: hidden;
+        padding: 0;
+        border: 0;
+        border-radius: 14px;
+        background: #e5e2dc;
+        color: var(--muted);
+        cursor: pointer;
+    }
+
+    .pdp__thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .pdp__thumb--model svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    /* Clear of the tile rather than on it, so a pale photo keeps its edge. */
+    .pdp__thumb.is-on {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
+    }
+
+    .pdp__thumb--model.is-on {
+        color: var(--ink);
+    }
+
+    /*
+     * Both sides are logical, so RTL puts "previous" on the right where the
+     * first slide is. The chevrons are drawn pointing at the edge they sit
+     * on, which is the direction each one travels in.
+     */
+    .pdp__arrow {
+        position: absolute;
+        z-index: 3;
+        top: 50%;
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--ink);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+
+    .pdp__arrow svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /*
+     * Previous sits at the inline START and next at the inline END, which under
+     * Arabic right-to-left puts "previous" on the RIGHT -- where the first slide
+     * is -- and "next" on the left.
+     *
+     * These two were the other way round, and the comment in product.php said
+     * the chevrons inside them were "rotated to match by the stylesheet". No
+     * such rule ever existed. The result was a pair of buttons sitting on the
+     * wrong sides with glyphs pointing the wrong way: previous on the left
+     * showing a right-pointing chevron, next on the right showing a left-pointing
+     * one. Both halves are fixed here, and the glyph half is below.
+     */
+    .pdp__arrow--prev {
+        inset-inline-start: 14px;
+    }
+
+    .pdp__arrow--next {
+        inset-inline-end: 14px;
+    }
+
+    /*
+     * The chevrons are drawn for right-to-left -- previous points right, next
+     * points left -- because that is the language the shop is in. Mirrored when
+     * the document is left-to-right, so lang/en.php needs no second set of paths.
+     */
+    [dir='ltr'] .pdp__arrow svg {
+        transform: scaleX(-1);
+    }
+
+    /*
+     * S is read back off this element by product-media.js on every resize, so
+     * the notch and the pill are drawn to whatever width the column settles
+     * at here -- 560 on a wide screen, less on a narrow one. Nothing about
+     * the geometry is pinned to the width the phone happened to have.
+     */
+    .pdp__col {
+        grid-column: 2;
+        position: sticky;
+        top: 96px;
+        text-align: start;
+    }
+
+    .pdp__name {
+        margin-top: 0;
+    }
+
+    /*
+     * .pdp__col sets start on the column, but this is the one rule in it
+     * specific enough to beat that. The row still puts the value opposite its
+     * term -- that is the flex, not the alignment -- and a value long enough
+     * to wrap now reads from the start of its own block instead of ragging
+     * backwards.
+     */
+    .pdp__specs dd {
+        text-align: start;
+    }
+
+    /*
+     * Back into the flow. A bar pinned to the bottom of a desktop window is
+     * answering a problem that only a phone has -- a page too tall to reach
+     * the buy button from -- and here it just covers the page.
+     */
+    .pdp__bar {
+        position: static;
+        grid-template-columns: auto minmax(0, 1fr);
+        margin-top: 28px;
+        padding: 0;
+        background: none;
+    }
+
+    .pdp__bar::before {
+        content: none;
+    }
+}
+
+/* product detail (pdp) — end */
+
+@media (max-width: 760px) {
+    .page--catalog,
+    .page--product {
+        padding-inline: 16px;
+    }
+
+    .catalog__head .page__lede {
+        display: none;
+    }
+}
+
+@media (max-width: 420px) {
+    .page--catalog,
+    .page--product {
+        padding-inline: 12px;
+    }
+}

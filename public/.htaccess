@@ -1,0 +1,35 @@
+RewriteEngine On
+
+AddType model/gltf-binary .glb
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType model/gltf-binary "access plus 1 year"
+    ExpiresByType image/webp        "access plus 1 year"
+    ExpiresByType font/woff2        "access plus 1 year"
+    ExpiresByType text/javascript   "access plus 1 week"
+    ExpiresByType text/css          "access plus 1 week"
+</IfModule>
+
+# The editor island is 1.27 MB of JavaScript uncompressed and 362 kB gzipped.
+# Sent raw over a 4G connection that is eight seconds before the customer can
+# draw anything; compressed it is under two. Nothing else on the site is large
+# enough for this to matter, but the island alone makes it decisive.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Brotli where the host has it: another 15% off the island, same request.
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/css text/javascript
+    AddOutputFilterByType BROTLI_COMPRESS application/javascript application/json
+    AddOutputFilterByType BROTLI_COMPRESS image/svg+xml
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>

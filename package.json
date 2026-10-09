@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Root dev tooling only (QA screenshots). The editor island has its own package.json in editor-src/.",
+  "devDependencies": {
+    "playwright": "^1.64.0"
+  }
+}
