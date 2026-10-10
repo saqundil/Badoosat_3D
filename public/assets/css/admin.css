@@ -665,16 +665,6 @@ code {
     padding: 20px;
 }
 
-.panel--narrow {
-    width: min(360px, 92vw);
-    display: grid;
-    gap: 14px;
-}
-
-.panel--narrow h1 {
-    font-size: 18px;
-}
-
 /* Three colour families only: a confirmation is the accent's soft tint, an
    error is the one red. The storefront's green --ok-* stays the storefront's. */
 .alert {
@@ -3504,6 +3494,83 @@ body:has(.save-bar:not([hidden])) .toasts {
 .colour-field__swatch:focus-visible {
     outline: var(--focus-ring);
     outline-offset: var(--focus-offset);
+}
+
+/* --------------------------------------------------------------- login */
+
+/* The one screen seen before anything else: the mark, the card, and the
+   language switch under it. */
+.login {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-5);
+    inline-size: min(400px, 100vw - var(--space-5) * 2);
+    padding-block: var(--space-6);
+}
+
+.login__brand {
+    color: var(--c-ink);
+}
+
+.login__card {
+    display: grid;
+    gap: var(--space-4);
+    inline-size: 100%;
+    padding: var(--space-6);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.login__title {
+    font-size: var(--fs-page-title);
+    font-weight: var(--weight-bold);
+}
+
+.login__hint {
+    margin-block-start: calc(var(--space-3) * -1);
+    color: var(--c-ink-2);
+    font-size: var(--fs-small);
+}
+
+/* Belongs to both fields, so it sits above them rather than under one. */
+.login__error {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--c-danger);
+    border-radius: var(--r-tile);
+    color: var(--c-danger);
+    font-size: var(--fs-small);
+}
+
+.login__error .icon {
+    flex: none;
+    inline-size: 18px;
+    block-size: 18px;
+}
+
+.login__submit {
+    inline-size: 100%;
+    margin-block-start: var(--space-2);
+}
+
+.login__langs .lang-switch {
+    margin: 0;
+}
+
+/* Standing on their own here, not packed into the top bar, so they are given
+   the full target size. */
+.login__langs .lang-switch__item,
+.login__brand .brand {
+    min-block-size: var(--tap);
+}
+
+.login__brand .brand {
+    display: inline-flex;
+    align-items: center;
 }
 
 /* ----------------------------------------------------------- overview */

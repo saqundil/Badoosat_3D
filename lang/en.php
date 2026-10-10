@@ -837,4 +837,13 @@ return [
     'admin.overview.alert.unsellable'   => '{n, plural, one{# product is on sale with no variants, so nobody can buy it.} other{# products are on sale with no variants, so nobody can buy them.}}',
     'admin.overview.alert.garments'     => '{n, plural, one{# garment type is missing from the customer editor.} other{# garment types are missing from the customer editor.}}',
     'admin.overview.alert.no_slides'    => 'No slide is live — the top of the homepage is empty.',
+
+    // Admin login (public/admin/login.php)
+    'admin.login.title'      => 'Dashboard',
+    'admin.login.hint'       => 'Sign in to manage orders, products and the storefront.',
+    'admin.login.username'   => 'Username',
+    'admin.login.password'   => 'Password',
+    'admin.login.submit'     => 'Sign in',
+    'admin.login.wrong'      => 'That username and password do not match.',
+    'admin.login.too_many'   => 'Too many attempts. Wait fifteen minutes and try again.',
 ];
