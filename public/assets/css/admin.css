@@ -3506,6 +3506,137 @@ body:has(.save-bar:not([hidden])) .toasts {
     outline-offset: var(--focus-offset);
 }
 
+/* ------------------------------------------------------- system status */
+
+/* The answer to "is anything wrong?", before anything is listed. */
+.verdict {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.verdict__mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 48px;
+    block-size: 48px;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-accent);
+    color: var(--c-surface);
+}
+
+/* Not working, and working but not at its best: the one red, and ink. */
+.verdict--bad .verdict__mark {
+    background: var(--c-danger);
+}
+
+.verdict--warn .verdict__mark {
+    background: var(--c-night);
+}
+
+.verdict__title {
+    font-size: var(--fs-card-title);
+    font-weight: var(--weight-bold);
+}
+
+.verdict__text {
+    color: var(--c-ink-2);
+}
+
+.check-list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.check-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+}
+
+.check-row__mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 28px;
+    block-size: 28px;
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface-2);
+    color: var(--c-ink-2);
+}
+
+.check-row--ok .check-row__mark {
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+}
+
+.check-row--bad .check-row__mark {
+    background: var(--c-danger);
+    color: var(--c-surface);
+}
+
+.check-row__mark .icon {
+    inline-size: 16px;
+    block-size: 16px;
+}
+
+.check-row__text {
+    display: grid;
+    flex: 1 1 16rem;
+    min-inline-size: 0;
+}
+
+.check-row__title {
+    font-weight: var(--weight-semibold);
+}
+
+.check-row__detail {
+    color: var(--c-ink-2);
+    font-size: var(--fs-small);
+}
+
+.check-row .chip {
+    margin-inline-start: auto;
+}
+
+/* A short list of figures: label above, number below. */
+.facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    margin: 0;
+}
+
+.facts dt {
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+}
+
+.facts dd {
+    margin: 0;
+    font-size: var(--fs-card-title);
+    font-weight: var(--weight-bold);
+    font-variant-numeric: tabular-nums;
+}
+
+.facts__bad {
+    color: var(--c-danger);
+}
+
 /* -------------------------------------------------- homepage settings */
 
 /* The banner's fields and the banner, side by side. */
