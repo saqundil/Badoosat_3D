@@ -199,17 +199,23 @@ final class OrderRepository extends Repository
 
         $params = [];
 
+        /*
+         * Named, like :limit below. With `?` here PDO was asked to mix
+         * positional and named parameters in one statement, which it refuses --
+         * so every call that named a status threw, and the production export
+         * button on the orders screen was one of them.
+         */
         if ($status !== '') {
-            $sql     .= ' WHERE o.status = ?';
-            $params[] = $status;
+            $sql             .= ' WHERE o.status = :status';
+            $params['status'] = $status;
         }
 
         $sql .= ' GROUP BY o.id ORDER BY o.id DESC LIMIT :limit';
 
         $stmt = $this->pdo()->prepare($sql);
 
-        foreach ($params as $i => $value) {
-            $stmt->bindValue($i + 1, $value);
+        foreach ($params as $name => $value) {
+            $stmt->bindValue(':' . $name, $value);
         }
 
         $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
