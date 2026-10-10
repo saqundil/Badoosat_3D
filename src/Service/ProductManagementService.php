@@ -117,6 +117,143 @@ final class ProductManagementService
         return $this->products->sizes();
     }
 
+    /**
+     * The stock page's save: price, stock and "on sale" for many variants.
+     *
+     * Each variant arrives with the values the page was drawn with ("was"),
+     * and only what the owner changed is written. That matters for stock: a
+     * page left open while orders come in would otherwise put back every unit
+     * those orders took, and the shop would sell them twice. So a changed
+     * value is written only if the database still holds what the page showed;
+     * if it moved in the meantime, nothing is saved and the variant is named
+     * with its current figure, to be looked at again.
+     *
+     * @param array<string,mixed> $input  stock[id], price[id], active[id], was[id] = "stock|cents|active"
+     * @return array{changed:int}
+     * @throws ValidationException  field => message; a variant that moved under the page is moved_<id>
+     */
+    public function saveStock(array $input): array
+    {
+        $was = [];
+
+        foreach ((array) ($input['was'] ?? []) as $id => $packed) {
+            $parts = explode('|', (string) $packed);
+
+            if ((int) $id > 0 && count($parts) === 3) {
+                $was[(int) $id] = ['stock' => (int) $parts[0], 'cents' => (int) $parts[1], 'active' => (int) $parts[2] === 1];
+            }
+        }
+
+        if ($was === []) {
+            return ['changed' => 0];
+        }
+
+        $names = [];
+        foreach ($this->products->variants(array_keys($was)) as $row) {
+            $names[(int) $row['id']] = $row;
+        }
+
+        $label = static fn (int $id): array => [
+            'product' => "\u{2068}" . (string) ($names[$id]['product_name'] ?? '#' . $id) . "\u{2069}",
+            'colour'  => "\u{2068}" . (string) ($names[$id]['color_name'] ?? '') . "\u{2069}",
+            'size'    => "\u{2068}" . (string) ($names[$id]['size_code'] ?? '') . "\u{2069}",
+        ];
+
+        /* The values asked for, checked before anything is opened. */
+        $want = [];
+        $errors = [];
+
+        foreach ($was as $id => $old) {
+            $stock = trim((string) ($input['stock'][$id] ?? ''));
+            $price = trim((string) ($input['price'][$id] ?? ''));
+
+            if (!preg_match('/^\d{1,7}$/', $stock)) {
+                $errors['stock_' . $id] = Lang::get('admin.stock.err.stock', $label($id));
+            }
+
+            if (!preg_match('/^\d+(\.\d{1,2})?$/', $price) || (float) $price < Price::MIN || (float) $price > Price::MAX) {
+                $errors['price_' . $id] = Lang::get('admin.stock.err.price', $label($id) + ['min' => Price::MIN, 'max' => Price::MAX]);
+            }
+
+            $want[$id] = ['stock' => (int) $stock, 'cents' => Price::cents($price), 'active' => !empty($input['active'][$id])];
+        }
+
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
+
+        $changed = 0;
+        $conflicts = [];
+
+        $this->pdo->beginTransaction();
+
+        try {
+            $marks = implode(', ', array_fill(0, count($was), '?'));
+            $lock = $this->pdo->prepare(
+                'SELECT id, stock, price_cents, is_active FROM product_variants WHERE id IN (' . $marks . ') FOR UPDATE'
+            );
+            $lock->execute(array_keys($was));
+            $now = [];
+
+            foreach ($lock->fetchAll() as $row) {
+                $now[(int) $row['id']] = ['stock' => (int) $row['stock'], 'cents' => (int) $row['price_cents'], 'active' => (int) $row['is_active'] === 1];
+            }
+
+            foreach ($want as $id => $new) {
+                $old = $was[$id];
+                $db = $now[$id] ?? null;
+                $set = [];
+
+                foreach (['stock' => 'stock', 'cents' => 'price_cents', 'active' => 'is_active'] as $key => $column) {
+                    if ($new[$key] === $old[$key]) {
+                        continue;
+                    }
+
+                    if ($db === null || $db[$key] !== $old[$key]) {
+                        $conflicts[$id] = $db;
+                        continue 2;
+                    }
+
+                    $set[$column] = is_bool($new[$key]) ? (int) $new[$key] : $new[$key];
+                }
+
+                if ($set !== []) {
+                    $columns = implode(', ', array_map(static fn (string $c): string => $c . ' = ?', array_keys($set)));
+                    $this->pdo->prepare('UPDATE product_variants SET ' . $columns . ' WHERE id = ?')
+                        ->execute([...array_values($set), $id]);
+                    $changed++;
+                }
+            }
+
+            if ($conflicts !== []) {
+                $this->pdo->rollBack();
+
+                $messages = [];
+                foreach ($conflicts as $id => $db) {
+                    $messages['moved_' . $id] = $db === null
+                        ? Lang::get('admin.stock.err.gone', $label($id))
+                        : Lang::get('admin.stock.err.moved', $label($id) + ['stock' => $db['stock']]);
+                }
+
+                throw new ValidationException($messages);
+            }
+
+            $this->pdo->commit();
+        } catch (Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $error;
+        }
+
+        if ($changed > 0) {
+            $this->catalog->forgetCache();
+        }
+
+        return ['changed' => $changed];
+    }
+
     /** @return array<int,array<string,mixed>> every variant, active or not */
     public function variantRows(int $productId): array
     {

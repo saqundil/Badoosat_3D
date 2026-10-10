@@ -3513,6 +3513,159 @@ body:has(.save-bar:not([hidden])) .toasts {
     color: var(--c-ink-2);
 }
 
+/* ------------------------------------------------------- stock page */
+
+/* The page's one line of figures, above the products. */
+.stock-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
+    color: var(--c-ink-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.stock-summary span:first-child {
+    color: var(--c-ink);
+    font-weight: var(--weight-semibold);
+}
+
+.stock-summary__bad {
+    color: var(--c-danger);
+    font-weight: var(--weight-semibold);
+}
+
+.stock-list {
+    display: grid;
+    gap: var(--space-4);
+}
+
+/* One card per product: its grid, and its prices folded under it. */
+.stock-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.stock-card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.stock-card__titles {
+    min-inline-size: 0;
+}
+
+.stock-card__title {
+    font-size: var(--fs-emph);
+    font-weight: var(--weight-semibold);
+}
+
+.stock-card__title a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    color: inherit;
+    text-decoration: none;
+}
+
+.stock-card__title a:hover {
+    color: var(--c-accent);
+    text-decoration: underline;
+}
+
+.stock-card__head .chip {
+    margin-inline-start: auto;
+}
+
+/* A section fold inside a card carries no second border. */
+.stock-card .form-section {
+    border: 0;
+}
+
+/* A variant that is not on sale: its cell is quiet, not hidden. */
+.stock-matrix__cell--off {
+    background: var(--c-surface-2);
+}
+
+.stock-matrix__cell--off .input--cell {
+    color: var(--c-ink-2);
+}
+
+/* Running low, and nothing left. Colour is never the only sign: the figure
+   itself is the message, and the page's summary line counts both. */
+.input--cell[data-low='low'] {
+    border-color: var(--c-ink-2);
+}
+
+.input--cell[data-low='out'] {
+    border-color: var(--c-danger);
+    color: var(--c-danger);
+    font-weight: var(--weight-semibold);
+}
+
+.input--cell[aria-invalid='true'] {
+    border-color: var(--c-danger);
+}
+
+/* Price and "on sale" in one cell. */
+.price-cell {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-1);
+}
+
+.price-matrix .input--cell {
+    min-inline-size: 7em;
+}
+
+.affix--cell .input {
+    padding-inline-end: calc(var(--space-2) + 2.6em);
+}
+
+.affix--cell.affix--before .input {
+    padding-inline: calc(var(--space-2) + 2.6em) var(--space-2);
+}
+
+.affix--cell .affix__text {
+    inset-inline-end: var(--space-2);
+}
+
+.affix--cell.affix--before .affix__text {
+    inset-inline: var(--space-2) auto;
+}
+
+.stock-designs {
+    display: grid;
+    gap: var(--space-3);
+    padding-block-start: var(--space-5);
+    border-block-start: 1px solid var(--c-line);
+}
+
+.stock-designs__title {
+    font-size: var(--fs-card-title);
+    font-weight: var(--weight-semibold);
+}
+
+/* On a phone the grid scrolls inside its card, and the colour column stays
+   in view so a cell is never anonymous. */
+@media (max-width: 767px) {
+    .stock-card {
+        padding: var(--space-4);
+    }
+
+    .stock-matrix__table tbody th {
+        position: sticky;
+        inset-inline-start: 0;
+        background: var(--c-surface);
+    }
+}
+
 /* ------------------------------------------------------------ dropzone */
 
 .dropzone {

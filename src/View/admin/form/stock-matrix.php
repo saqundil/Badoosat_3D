@@ -15,10 +15,17 @@ declare(strict_types=1);
  * @var array<int,array{id:int,name:string,hex:string}> $colors
  * @var array<int,array{id:int,code:string}>            $sizes
  * @var array<int,array<int,int|null>>                  $values  [colorId][sizeId] => stock, null = not offered
+ * @var ?callable(int,int):string                         $cellName   a cell's field name (default name[colorId][sizeId])
+ * @var ?callable(int,int):array<string,string|bool>      $cellAttrs  extra attributes on a cell's input
+ * @var ?callable(int,int):bool                           $cellOff    true for a variant that is not on sale
  */
 
 use App\Support\Format;
 use App\Support\Lang;
+
+$cellName  ??= null;
+$cellAttrs ??= null;
+$cellOff   ??= null;
 
 $colTotals = [];
 $grand = 0;
@@ -44,17 +51,21 @@ $grand = 0;
                         <bdi><?= e($color['name']) ?></bdi>
                     </th>
                     <?php foreach ($sizes as $size) {
-                        $v = $values[$color['id']][$size['id']] ?? null; ?>
-                        <td>
+                        $v = $values[$color['id']][$size['id']] ?? null;
+                        $off = $v !== null && $cellOff !== null && $cellOff((int) $color['id'], (int) $size['id']); ?>
+                        <td<?= $off ? ' class="stock-matrix__cell--off"' : '' ?>>
                             <?php if ($v === null) { ?>
                                 <span class="stock-matrix__none" title="<?= e(Lang::get('admin.form.matrix_none')) ?>">—</span>
                             <?php } else {
                                 $rowTotal += $v;
                                 $colTotals[$size['id']] = ($colTotals[$size['id']] ?? 0) + $v; ?>
                                 <input class="input input--cell" type="number" min="0" step="1" inputmode="numeric"
-                                       name="<?= e($name) ?>[<?= (int) $color['id'] ?>][<?= (int) $size['id'] ?>]"
+                                       name="<?= e($cellName !== null ? $cellName((int) $color['id'], (int) $size['id']) : $name . '[' . (int) $color['id'] . '][' . (int) $size['id'] . ']') ?>"
                                        value="<?= (int) $v ?>" data-row="<?= (int) $color['id'] ?>" data-col="<?= (int) $size['id'] ?>"
-                                       aria-label="<?= e(Lang::get('admin.form.matrix_cell', ['colour' => $color['name'], 'size' => $size['code']])) ?>">
+                                       aria-label="<?= e(Lang::get('admin.form.matrix_cell', ['colour' => $color['name'], 'size' => $size['code']])) ?>"<?php
+                                foreach ($cellAttrs !== null ? $cellAttrs((int) $color['id'], (int) $size['id']) : [] as $k => $a) {
+                                    if ($a !== false) { echo ' ' . e((string) $k) . ($a === true ? '' : '="' . e((string) $a) . '"'); }
+                                } ?>>
                             <?php } ?>
                         </td>
                     <?php }

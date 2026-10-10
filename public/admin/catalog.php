@@ -5,22 +5,37 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 use App\Repository\DesignRepository;
-use App\Repository\ProductRepository;
-use App\Service\ProductService;
+use App\Service\GarmentService;
+use App\Service\ProductManagementService;
+use App\Service\ValidationException;
 use App\Support\Auth;
+use App\Support\Config;
 use App\Support\Csrf;
-use App\Support\Db;
+use App\Support\Format;
+use App\Support\Lang;
 use App\Support\Price;
 use App\Support\Response;
 use App\Support\Validator;
 
 Auth::require();
 
-$products = ProductRepository::make();
+/*
+ * Stock: every product's stock as a colour-by-size grid, with its prices and
+ * "on sale" boxes one fold below. One form, one save bar for the page.
+ *
+ * Only what the owner changed is written, and only if the database still
+ * holds what the page showed (ProductManagementService::saveStock): orders
+ * placed while the page is open keep the units they took.
+ */
+
+/** A variant at or under this many units counts as running low. */
+const LOW_STOCK = 4;
+
+$service  = ProductManagementService::make();
 $designs  = DesignRepository::make();
-$service  = ProductService::make();
 
 $errors = [];
+$posted = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Csrf::require($_POST);
@@ -28,55 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
 
     if ($action === 'stock') {
-        /*
-         * Price and stock, per variant.
-         *
-         * The price obeys the same rule the product form obeys -- Price::MIN to
-         * Price::MAX, and the identical sentence when it does not -- because
-         * they are the same question asked twice. This box used to clamp a
-         * negative silently to zero, which is the one value the product form
-         * exists to forbid: it reaches the catalogue reading as free.
-         *
-         * And the conversion is Price::cents(), which casts to float before
-         * multiplying. Written here as `(int) $price * 100` it truncated first,
-         * so every 19.99 an owner typed was stored as 19.00.
-         */
-        $rows = (array) ($_POST['variant'] ?? []);
-        $rejected = [];
-
-        foreach ($rows as $variantId => $values) {
-            $price = $values['price'] ?? '';
-            $stock = $values['stock'] ?? '';
-
-            if (!is_numeric($price) || (float) $price < Price::MIN || (float) $price > Price::MAX) {
-                $rejected['variant_' . (int) $variantId] =
-                    'سعر المتغيّر ' . (int) $variantId . ' يجب أن يكون بين '
-                    . Price::MIN . ' و ' . Price::MAX . '.';
-            }
-
-            if (!is_numeric($stock) || (int) $stock < 0) {
-                $rejected['stock_' . (int) $variantId] =
-                    'مخزون المتغيّر ' . (int) $variantId . ' يجب أن يكون صفرًا أو أكثر.';
-            }
-        }
-
-        if ($rejected !== []) {
-            $errors = $rejected;
-        } else {
-            $stmt = Db::pdo()->prepare(
-                'UPDATE product_variants SET price_cents = ?, stock = ?, is_active = ? WHERE id = ?'
-            );
-
-            foreach ($rows as $variantId => $values) {
-                $stmt->execute([
-                    Price::cents($values['price']),
-                    (int) $values['stock'],
-                    isset($values['active']) ? 1 : 0,
-                    (int) $variantId,
-                ]);
-            }
-
-            $_SESSION['notice'] = 'حُفظ المخزون والأسعار.';
+        try {
+            $result = $service->saveStock($_POST);
+            $_SESSION['notice'] = $result['changed'] === 0
+                ? Lang::get('admin.stock.nothing_changed')
+                : Format::plural('admin.stock.saved', $result['changed']);
+            Response::redirect('/admin/catalog.php');
+        } catch (ValidationException $e) {
+            // Re-drawn in this request, with what was typed: nothing was saved.
+            $errors = $e->errors();
+            $posted = $_POST;
         }
     }
 
@@ -95,10 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
          * #1. Deleting the tables is phase 4, by decision, after the inventory
          * has been reviewed. Until then the listing is a record, not an editor.
          */
-        $_SESSION['errors'] = ['design' =>
-            'إدارة التصاميم الجاهزة متوقّفة. صار العمل الفني جزءًا من المنتج نفسه: '
-            . 'افتح المنتج وارفع عمله الفني من شاشة المنتجات. '
-            . 'التصاميم القائمة معروضة للاطّلاع فقط لأن سجلّ الطلبات ما زال يشير إليها.'];
+        $_SESSION['errors'] = ['design' => Lang::get('admin.stock.designs_closed')];
         Response::redirect('/admin/catalog.php');
     }
 
@@ -138,237 +111,259 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['notice'] = 'حُفظ التصميم.';
         }
     }
-
-    if ($errors === []) {
-        /*
-         * The listing is served from a file cache so it can be rendered without
-         * touching the database at all. The price of that is that a save has to
-         * say so -- nothing else will, and a shop owner who changes a price and
-         * still sees the old one on the site will change it again.
-         */
-        $service->forgetCache();
-
-        Response::redirect('/admin/catalog.php');
-    }
 }
 
 $notice = $_SESSION['notice'] ?? null;
 
 /*
- * Errors that survived a redirect, as the product editor does it.
- *
- * This page used to keep its errors in a local variable only, which worked
- * while every failure re-rendered the page in the same request. The disabled
- * design write point redirects instead -- there is nothing to re-render and no
- * draft worth keeping -- so its message would have vanished without this.
+ * Errors that survived a redirect, as the product editor does it: the
+ * disabled design write point redirects, so its message would otherwise
+ * vanish.
  */
 $errors = array_merge($errors, (array) ($_SESSION['errors'] ?? []));
 unset($_SESSION['notice'], $_SESSION['errors']);
 
-$allProducts = $products->findMany(array_map(
-    static fn (array $p): int => (int) $p['id'],
-    $products->listing('newest', '')
-));
+/* ------------------------------------------------------- what is drawn */
 
-$editing = null;
-
-if (isset($_GET['design'])) {
-    $editing = $designs->find((int) $_GET['design']);
-
-    if ($editing !== null) {
-        $editing['products'] = $designs->productsFor((int) $editing['id']);
-    }
+$locale = Lang::locale();
+$typeNames = [];
+foreach (GarmentService::make()->all() as $type) {
+    $typeNames[(int) $type['id']] = (string) ($locale === 'en' && trim((string) $type['name_en']) !== '' ? $type['name_en'] : $type['name_ar']);
 }
 
-$title   = 'الكتالوج';
+$public = (string) Config::get('app.paths.public');
+$all = $service->paginate('', 1, 100, 'name', 'asc')['items'];
+$facts = $service->listFacts(array_map('intval', array_column($all, 'id')));
+
+$cards = [];
+$summary = ['units' => 0, 'out' => 0, 'low' => 0];
+
+foreach ($all as $product) {
+    $pid = (int) $product['id'];
+    $colors = [];
+    $sizes = [];
+    $rows = [];
+
+    foreach ($service->variantRows($pid) as $v) {
+        $vid = (int) $v['id'];
+        $moved = isset($errors['moved_' . $vid]);
+
+        /* A refused save shows what was typed -- except where the database
+           moved under the page: there it shows the figure that is true now. */
+        $useTyped = $posted !== null && !$moved;
+        $stock = $useTyped ? (string) ($posted['stock'][$vid] ?? $v['stock']) : (string) (int) $v['stock'];
+        $price = $useTyped ? (string) ($posted['price'][$vid] ?? '') : number_format((int) $v['price_cents'] / 100, 2, '.', '');
+        $active = $useTyped ? !empty($posted['active'][$vid]) : (int) $v['is_active'] === 1;
+        $was = $useTyped && isset($posted['was'][$vid])
+            ? (string) $posted['was'][$vid]
+            : (int) $v['stock'] . '|' . (int) $v['price_cents'] . '|' . (int) $v['is_active'];
+
+        $colors[(int) $v['color_id']] = ['id' => (int) $v['color_id'], 'name' => (string) $v['color_name'], 'hex' => (string) $v['color_hex']];
+        $sizes[(int) $v['size_id']] = ['id' => (int) $v['size_id'], 'code' => (string) $v['size_code']];
+        $rows[(int) $v['color_id']][(int) $v['size_id']] = [
+            'id' => $vid, 'stock' => $stock, 'price' => $price, 'active' => $active, 'was' => $was,
+            'error' => $errors['stock_' . $vid] ?? $errors['moved_' . $vid] ?? null,
+            'price_error' => $errors['price_' . $vid] ?? null,
+        ];
+
+        if ((int) $v['is_active'] === 1) {
+            $summary['units'] += (int) $v['stock'];
+            $summary['out'] += (int) $v['stock'] === 0 ? 1 : 0;
+            $summary['low'] += (int) $v['stock'] > 0 && (int) $v['stock'] <= LOW_STOCK ? 1 : 0;
+        }
+    }
+
+    $thumb = null;
+    foreach ([(string) ($product['image_path'] ?? ''), (string) ($facts[$pid]['thumb'] ?? '')] as $path) {
+        if ($thumb === null && $path !== '' && !str_contains($path, '..') && is_file($public . $path)) {
+            $thumb = $path;
+        }
+    }
+
+    $cards[] = [
+        'product' => $product,
+        'type' => $typeNames[(int) $product['garment_id']] ?? null,
+        'thumb' => $thumb,
+        'colors' => array_values($colors),
+        'sizes' => array_values($sizes),
+        'rows' => $rows,
+        'stock' => $facts[$pid]['stock'] ?? 0,
+        'priceErrors' => array_filter(array_merge(...array_map(static fn (array $r): array => array_column($r, 'price_error'), $rows ?: [[]]))) !== [],
+    ];
+}
+
+$title   = Lang::get('admin.stock.title');
 $current = 'catalog';
+$toast   = $notice !== null ? ['text' => $notice] : null;
 
-$body = static function () use ($products, $designs, $allProducts, $editing, $notice, $errors): void {
+$body = static function () use ($cards, $summary, $designs, $errors, $public): void {
+    $ids = [];
+    foreach (array_keys($errors) as $key) {
+        if (preg_match('/^(stock|moved|price)_(\d+)$/', (string) $key, $m)) {
+            $ids[$key] = ($m[1] === 'price' ? 'price-' : 'stock-') . $m[2];
+        }
+    }
     ?>
-    <main class="admin__body">
-        <h1>الكتالوج</h1>
+    <main class="dash">
+        <?php admin_partial('page-header', [
+            'title'    => Lang::get('admin.stock.title'),
+            'subtitle' => Lang::get('admin.stock.subtitle'),
+        ]); ?>
 
-        <?php if ($notice !== null) { ?><p class="alert alert--ok"><?= e($notice) ?></p><?php } ?>
-        <?php if ($errors !== []) { ?>
-            <div class="alert alert--error">
-                <ul><?php foreach ($errors as $message) { ?><li><?= e($message) ?></li><?php } ?></ul>
-            </div>
-        <?php } ?>
+        <?php admin_partial('form/error-summary', ['errors' => $errors, 'ids' => $ids + ['design' => 'stock-designs']]); ?>
 
-        <?php /* --------------------------------------------- stock and price */ ?>
-        <h2>المخزون والأسعار</h2>
-        <p class="hint">
-            المخزون على اللون والمقاس وحدهما. التصاميم لا مخزون لها — تُطبع عند الطلب.
+        <p class="stock-summary" role="status">
+            <span><?= e(Lang::get('admin.stock.units', ['n' => Format::number($summary['units'])])) ?></span>
+            <span class="<?= $summary['out'] > 0 ? 'stock-summary__bad' : '' ?>"><?= e(Format::plural('admin.stock.out_count', $summary['out'])) ?></span>
+            <span><?= e(Format::plural('admin.stock.low_count', $summary['low'])) ?></span>
         </p>
 
-        <form method="post" action="/admin/catalog.php">
+        <?php if ($cards === []) {
+            admin_partial('state', ['kind' => 'empty', 'text' => Lang::get('admin.products.empty'),
+                'action' => ['href' => '/admin/product-edit.php', 'text' => Lang::get('admin.products.new')]]);
+        } ?>
+
+        <form id="stock-form" class="stock-list" method="post" action="/admin/catalog.php" data-watch>
             <?= Csrf::field() ?>
             <input type="hidden" name="action" value="stock">
 
-            <?php foreach ($allProducts as $product) {
-                $variants = $products->variantsFor([(int) $product['id']]); ?>
-                <div class="panel" style="margin-bottom:18px">
-                    <h3><?= e($product['name']) ?> <code><?= e($product['slug']) ?></code></h3>
+            <?php foreach ($cards as $card) {
+                $p = $card['product'];
+                $pid = (int) $p['id'];
+                $rows = $card['rows']; ?>
+                <section class="stock-card" aria-labelledby="stock-p-<?= $pid ?>">
+                    <header class="stock-card__head">
+                        <?php if ($card['thumb'] !== null) { ?>
+                            <img class="cell-media__thumb" src="<?= e($card['thumb']) ?>" alt="" width="40" height="40" loading="lazy" decoding="async">
+                        <?php } else { ?>
+                            <span class="cell-media__thumb" aria-hidden="true"></span>
+                        <?php } ?>
+                        <div class="stock-card__titles">
+                            <h2 class="stock-card__title" id="stock-p-<?= $pid ?>">
+                                <a href="/admin/product-edit.php?id=<?= $pid ?>"><bdi><?= e((string) $p['name']) ?></bdi></a>
+                            </h2>
+                            <p class="cell-media__sub">
+                                <?php if ($card['type'] !== null) { ?><bdi><?= e($card['type']) ?></bdi> · <?php } ?>
+                                <?= e(Lang::get('admin.stock.units', ['n' => Format::number($card['stock'])])) ?>
+                            </p>
+                        </div>
+                        <?php if (!(int) $p['is_active']) {
+                            admin_partial('status-chip', ['label' => Lang::get('admin.products.status.hidden'), 'tone' => 'done']);
+                        } ?>
+                    </header>
 
-                    <table class="table">
-                        <thead>
-                            <tr><th>اللون</th><th>المقاس</th><th>SKU</th><th>السعر</th><th>المخزون</th><th>متاح</th></tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($variants as $variant) { ?>
-                                <tr>
-                                    <td>
-                                        <span class="slide__swatch" style="background:<?= e($variant['color_hex']) ?>"></span>
-                                        <?= e($variant['color_name']) ?>
-                                    </td>
-                                    <td><?= e($variant['size_code']) ?></td>
-                                    <td><code><?= e($variant['sku']) ?></code></td>
-                                    <td>
-                                        <input type="number" min="0" step="1" style="width:90px"
-                                               name="variant[<?= (int) $variant['id'] ?>][price]"
-                                               value="<?= (int) round((int) $variant['price_cents'] / 100) ?>"
-                                               aria-label="السعر">
-                                    </td>
-                                    <td>
-                                        <input type="number" min="0" style="width:90px"
-                                               name="variant[<?= (int) $variant['id'] ?>][stock]"
-                                               value="<?= (int) $variant['stock'] ?>"
-                                               aria-label="المخزون">
-                                    </td>
-                                    <td>
-                                        <input type="checkbox" name="variant[<?= (int) $variant['id'] ?>][active]"
-                                               <?= (int) $variant['is_active'] ? 'checked' : '' ?>
-                                               aria-label="متاح">
-                                    </td>
-                                </tr>
-                            <?php } ?>
-                        </tbody>
-                    </table>
-                </div>
+                    <?php if ($rows === []) { ?>
+                        <p class="form-field__help"><?= e(Lang::get('admin.stock.no_variants')) ?>
+                            <a href="/admin/product-edit.php?id=<?= $pid ?>"><?= e(Lang::get('admin.stock.add_colours')) ?></a></p>
+                    <?php } else {
+                        foreach ($rows as $byColour) {
+                            foreach ($byColour as $cell) { ?>
+                                <input type="hidden" name="was[<?= (int) $cell['id'] ?>]" value="<?= e($cell['was']) ?>">
+                            <?php }
+                        }
+
+                        admin_partial('form/stock-matrix', [
+                            'name' => 'stock',
+                            'caption' => Lang::get('admin.stock.caption', ['name' => (string) $p['name']]),
+                            'colors' => $card['colors'],
+                            'sizes' => $card['sizes'],
+                            'values' => array_map(static fn (array $r): array => array_map(static fn (array $c): int => (int) $c['stock'], $r), $rows),
+                            'cellName' => static fn (int $c, int $s): string => 'stock[' . (int) $rows[$c][$s]['id'] . ']',
+                            'cellOff' => static fn (int $c, int $s): bool => !$rows[$c][$s]['active'],
+                            'cellAttrs' => static fn (int $c, int $s): array => [
+                                'id' => 'stock-' . (int) $rows[$c][$s]['id'],
+                                'max' => 9999999,
+                                'required' => true,
+                                'aria-invalid' => $rows[$c][$s]['error'] !== null ? 'true' : false,
+                                'data-low' => (int) $rows[$c][$s]['stock'] <= LOW_STOCK ? ((int) $rows[$c][$s]['stock'] === 0 ? 'out' : 'low') : false,
+                            ],
+                        ]);
+
+                        $cellErrors = array_filter(array_merge(...array_map(static fn (array $r): array => array_column($r, 'error'), $rows)));
+                        foreach ($cellErrors as $message) { ?>
+                            <p class="form-field__error"><?= admin_icon('alert') ?><span><?= e($message) ?></span></p>
+                        <?php }
+
+                        admin_partial('form/section', [
+                            'id' => 'stock-prices-' . $pid,
+                            'title' => Lang::get('admin.stock.prices_title'),
+                            'help' => Lang::get('admin.stock.prices_help'),
+                            'open' => $card['priceErrors'],
+                            'body' => static function () use ($card, $rows, $p): void {
+                                admin_partial('form/price-matrix', [
+                                    'caption' => Lang::get('admin.stock.prices_caption', ['name' => (string) $p['name']]),
+                                    'colors' => $card['colors'],
+                                    'sizes' => $card['sizes'],
+                                    'cells' => array_map(static fn (array $r): array => array_map(static fn (array $c): array => [
+                                        'id' => $c['id'], 'price' => $c['price'], 'active' => $c['active'], 'error' => $c['price_error'],
+                                    ], $r), $rows),
+                                ]);
+                                foreach (array_filter(array_merge(...array_map(static fn (array $r): array => array_column($r, 'price_error'), $rows))) as $message) { ?>
+                                    <p class="form-field__error"><?= admin_icon('alert') ?><span><?= e($message) ?></span></p>
+                                <?php }
+                            },
+                        ]);
+                    } ?>
+                </section>
             <?php } ?>
-
-            <button type="submit" class="button button--primary">احفظ</button>
         </form>
 
-        <?php /* ------------------------------ ready-made designs: read only */ ?>
-        <h2 style="margin-top:34px">التصاميم الجاهزة <span class="badge">متوقّفة</span></h2>
+        <?php admin_partial('form/save-bar', ['form' => 'stock-form']); ?>
 
-        <p class="alert alert--notice" style="margin-bottom:14px">
-            إدارة التصاميم الجاهزة متوقّفة منذ إعادة بناء نموذج المنتجات.
-            صار العمل الفني جزءًا من المنتج نفسه: افتح المنتج من
-            <a href="/admin/products.php">شاشة المنتجات</a> وارفع عمله الفني هناك.
-            <br>
-            الجدول أدناه للاطّلاع فقط — سجلّ الطلبات ما زال يشير إلى هذه التصاميم،
-            فهي محفوظة كسجلّ ولا تُحذف.
-        </p>
-
-        <table class="table" style="margin-bottom:20px">
-            <thead>
-                <tr><th></th><th>الاسم</th><th>السعر الإضافي</th><th>على أي منتج</th><th>الحالة</th><th></th></tr>
-            </thead>
-            <tbody>
-                <?php foreach ($designs->all() as $design) { ?>
-                    <tr>
-                        <td>
-                            <?php if ($design['thumb_path']) { ?>
-                                <img src="<?= e($design['thumb_path']) ?>" alt="" width="40" height="40"
-                                     style="border-radius:6px;object-fit:cover">
-                            <?php } ?>
-                        </td>
-                        <td><?= e($design['name']) ?><br><code><?= e($design['slug']) ?></code></td>
-                        <td><?= e(money((int) $design['surcharge_cents'])) ?></td>
-                        <td><?= count($designs->productsFor((int) $design['id'])) ?> منتج</td>
-                        <td><span class="badge<?= (int) $design['is_active'] ? ' badge--on' : '' ?>">
-                            <?= (int) $design['is_active'] ? 'منشور' : 'معطّل' ?>
-                        </span></td>
-                        <td><a class="button" href="/admin/catalog.php?design=<?= (int) $design['id'] ?>">تحرير</a></td>
-                    </tr>
-                <?php } ?>
-            </tbody>
-        </table>
+        <?php /* ------------------------------ ready-made designs: a record */ ?>
+        <section class="stock-designs" id="stock-designs" aria-labelledby="stock-designs-title" tabindex="-1">
+            <h2 class="stock-designs__title" id="stock-designs-title"><?= e(Lang::get('admin.stock.designs_title')) ?></h2>
+            <p class="form-field__help"><?= e(Lang::get('admin.stock.designs_note')) ?></p>
+            <?php $list = $designs->all();
+            admin_partial('data-table', [
+                'id' => 'archived-designs',
+                'caption' => Lang::get('admin.stock.designs_title'),
+                'columns' => [
+                    ['key' => 'name', 'label' => Lang::get('admin.stock.col.design'), 'primary' => true],
+                    ['key' => 'surcharge', 'label' => Lang::get('admin.stock.col.surcharge'), 'align' => 'end'],
+                    ['key' => 'products', 'label' => Lang::get('admin.stock.col.products'), 'align' => 'end'],
+                    ['key' => 'status', 'label' => Lang::get('admin.stock.col.status')],
+                ],
+                'rows' => $list,
+                'cell' => static function (array $d, string $key) use ($designs, $public): void {
+                    switch ($key) {
+                        case 'name':
+                            $thumb = (string) ($d['thumb_path'] ?? '');
+                            $thumb = $thumb !== '' && !str_contains($thumb, '..') && is_file($public . $thumb) ? $thumb : null; ?>
+                            <span class="cell-media">
+                                <?php if ($thumb !== null) { ?>
+                                    <img class="cell-media__thumb" src="<?= e($thumb) ?>" alt="" width="40" height="40" loading="lazy">
+                                <?php } else { ?>
+                                    <span class="cell-media__thumb" aria-hidden="true"></span>
+                                <?php } ?>
+                                <span class="cell-media__text">
+                                    <span class="cell-media__title"><bdi><?= e((string) $d['name']) ?></bdi></span>
+                                    <bdi class="cell-media__sub code-text" translate="no"><?= e((string) $d['slug']) ?></bdi>
+                                </span>
+                            </span>
+                            <?php break;
+                        case 'surcharge':
+                            admin_partial('money', ['cents' => (int) $d['surcharge_cents']]);
+                            break;
+                        case 'products':
+                            echo e(Format::number(count($designs->productsFor((int) $d['id']))));
+                            break;
+                        default:
+                            admin_partial('status-chip', ['label' => Lang::get('admin.stock.archived'), 'tone' => 'done']);
+                    }
+                },
+                'empty' => ['text' => Lang::get('admin.stock.designs_none')],
+            ]); ?>
+        </section>
 
         <?php /*
          * The design editor, kept in the file and not rendered.
          *
          * Phase 1 of the product rebuild stopped every write to `designs`,
-         * `design_products` and `design_layers`. The markup stays because
-         * phase 4 decides what happens to these tables, and deleting a
-         * working editor before that decision is made would be deleting
-         * the only way to undo it. The write point above refuses the post
-         * regardless, so this is belt and braces, not the lock itself.
+         * `design_products` and `design_layers`. The markup lives in git
+         * history (before Phase 3.5) because phase 4 decides what happens to
+         * these tables; the write point above refuses the post regardless.
          */ ?>
-        <?php if (false) { ?>
-        <form class="panel" method="post" action="/admin/catalog.php">
-            <?= Csrf::field() ?>
-            <input type="hidden" name="action" value="design">
-            <input type="hidden" name="design_id" value="<?= (int) ($editing['id'] ?? 0) ?>">
-
-            <h3><?= $editing === null ? 'تصميم جديد' : 'تحرير ' . e($editing['name']) ?></h3>
-
-            <div class="stat-row">
-                <label class="field">
-                    <span>المُعرِّف</span>
-                    <input type="text" name="slug" value="<?= e((string) ($editing['slug'] ?? '')) ?>" required>
-                </label>
-                <label class="field">
-                    <span>الاسم</span>
-                    <input type="text" name="name" value="<?= e((string) ($editing['name'] ?? '')) ?>" required>
-                </label>
-            </div>
-
-            <label class="field">
-                <span>وصف قصير</span>
-                <input type="text" name="summary" value="<?= e((string) ($editing['summary'] ?? '')) ?>">
-            </label>
-
-            <div class="stat-row">
-                <label class="field">
-                    <span>ملف الطباعة (مسار تحت public)</span>
-                    <input type="text" name="print_path" required
-                           value="<?= e((string) ($editing['print_path'] ?? '/uploads/designs/')) ?>">
-                </label>
-                <label class="field">
-                    <span>المصغّرة</span>
-                    <input type="text" name="thumb_path"
-                           value="<?= e((string) ($editing['thumb_path'] ?? '')) ?>">
-                </label>
-            </div>
-
-            <div class="stat-row">
-                <label class="field">
-                    <span>السعر الإضافي (دينار)</span>
-                    <input type="number" name="surcharge" min="0" max="100000"
-                           value="<?= (int) round((int) ($editing['surcharge_cents'] ?? 0) / 100) ?>" required>
-                </label>
-                <label class="field">
-                    <span>الترتيب</span>
-                    <input type="number" name="sort_order" min="0" max="999"
-                           value="<?= (int) ($editing['sort_order'] ?? 0) ?>" required>
-                </label>
-            </div>
-
-            <fieldset>
-                <legend>متاح على</legend>
-                <?php foreach ($allProducts as $product) { ?>
-                    <label class="field field--check">
-                        <input type="checkbox" name="products[]" value="<?= (int) $product['id'] ?>"
-                            <?= in_array((int) $product['id'], $editing['products'] ?? [], true) ? 'checked' : '' ?>>
-                        <span><?= e($product['name']) ?></span>
-                    </label>
-                <?php } ?>
-            </fieldset>
-
-            <label class="field field--check">
-                <input type="checkbox" name="is_active" <?= ($editing === null || (int) $editing['is_active']) ? 'checked' : '' ?>>
-                <span>منشور</span>
-            </label>
-
-            <button type="submit" class="button button--primary">احفظ التصميم</button>
-            <?php if ($editing !== null) { ?>
-                <a class="button" href="/admin/catalog.php">إلغاء</a>
-            <?php } ?>
-        </form>
-        <?php } ?>
     </main>
     <?php
 };
