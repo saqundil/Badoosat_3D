@@ -3506,6 +3506,104 @@ body:has(.save-bar:not([hidden])) .toasts {
     outline-offset: var(--focus-offset);
 }
 
+/* ----------------------------------------------------------- overview */
+
+.alert-list {
+    display: grid;
+    gap: var(--space-3);
+}
+
+/* The newest orders and what is on the press, side by side. */
+.overview-split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.panel-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg);
+    background: var(--c-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.panel-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.panel-card__title {
+    font-size: var(--fs-card-title);
+    font-weight: var(--weight-semibold);
+}
+
+.mini-list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* One order in a short list: who, when, where it is, and how much. */
+.mini-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2);
+    border-radius: var(--r-tile);
+    color: var(--c-ink);
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease);
+}
+
+.mini-row:hover {
+    background: var(--c-surface-2);
+}
+
+.mini-row .avatar {
+    background: var(--c-surface-2);
+    color: var(--c-ink);
+}
+
+.mini-row__text {
+    display: grid;
+    flex: 1 1 8rem;
+    min-inline-size: 0;
+}
+
+.mini-row__id {
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+.mini-row__meta {
+    display: flex;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    color: var(--c-ink-2);
+    font-size: var(--fs-caption);
+    white-space: nowrap;
+}
+
+.mini-row__meta bdi {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-row__total {
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
 /* ------------------------------------------------------- system status */
 
 /* The answer to "is anything wrong?", before anything is listed. */
