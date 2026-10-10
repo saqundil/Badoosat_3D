@@ -1056,67 +1056,6 @@ textarea:focus-visible {
     font-weight: 700;
 }
 
-/* ------------------------------------------------------------- slide list */
-
-.slides {
-    list-style: none;
-    display: grid;
-    gap: 8px;
-}
-
-.slides.is-saved {
-    outline: 1px solid var(--admin-accent);
-    outline-offset: 6px;
-    border-radius: 4px;
-}
-
-.slide {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: var(--admin-panel);
-    border: 1px solid var(--admin-line);
-    border-radius: 8px;
-    padding: 10px 14px;
-    cursor: grab;
-}
-
-.slide.is-dragging {
-    opacity: 0.45;
-}
-
-.slide__grip {
-    color: var(--admin-dim);
-    font-size: 18px;
-    letter-spacing: -2px;
-}
-
-.slide__swatch {
-    display: inline-block;
-    width: 22px;
-    height: 22px;
-    border-radius: 5px;
-    border: 1px solid var(--admin-line);
-    flex: none;
-    vertical-align: -5px;
-}
-
-.slide__title {
-    flex: 1;
-    display: grid;
-}
-
-.slide__title small {
-    color: var(--admin-dim);
-    font-size: 11px;
-}
-
-.slide__actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
 .badge {
     display: inline-block;
     font-size: 11px;
@@ -1132,119 +1071,6 @@ textarea:focus-visible {
     background: var(--c-accent-soft);
 }
 
-/* ----------------------------------------------------------- slide editor */
-
-.editor {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 430px;
-    gap: 20px;
-    padding: 20px;
-    align-items: start;
-}
-
-@media (max-width: 1150px) {
-    .editor {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-.editor__preview {
-    position: sticky;
-    top: calc(var(--admin-bar-h) + var(--space-2));
-}
-
-.editor__preview-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-}
-
-/*
- * The preview frame.
- *
- * The frame is laid out at the device's width and painted at whatever fraction
- * of it fits the column. transform does not touch layout, so the document
- * inside is a 1440px-wide document however small it is drawn -- which is the
- * whole point: its media queries, its container queries and the notch geometry
- * all resolve against 1440.
- *
- * The wrapper is what the page flows around, so it is given the PAINTED height
- * by admin-hero.js; without that it would reserve the full unscaled height and
- * leave a column of empty space under the frame.
- */
-.preview-stage {
-    position: relative;
-    overflow: hidden;
-    border-radius: 14px;
-    background: var(--paper);
-}
-
-.preview-frame {
-    display: block;
-    border: 0;
-    width: 1440px;
-    height: 900px;
-    /* inline-start, not left: the panel is right-to-left, and an origin on the
-       wrong side would scale the frame away from the column it sits in. */
-    transform-origin: top left;
-}
-
-.preview-frame:dir(rtl) {
-    transform-origin: top right;
-}
-
-/* Two states, one look: the pressed one is the one in force. */
-.switch {
-    display: inline-flex;
-    gap: 2px;
-    padding: 2px;
-    border-radius: 999px;
-    background: var(--page-bg-muted);
-}
-
-.switch__button {
-    border: 0;
-    border-radius: 999px;
-    padding: 6px 14px;
-    font: inherit;
-    font-size: 13px;
-    color: inherit;
-    background: transparent;
-    cursor: pointer;
-}
-
-.switch__button[aria-pressed='true'] {
-    background: var(--admin-accent);
-    color: var(--admin-on-accent);
-    font-weight: 700;
-}
-
-.switch__note {
-    opacity: 0.6;
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-}
-
-/*
- * No height of its own. The preview renders the component under the component's
- * own rules; a second set of layout numbers here is exactly what made what the
- * administrator dragged land somewhere else on the site.
- */
-
-.editor__form-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.editor__form {
-    max-height: calc(100vh - var(--admin-bar-h) - var(--space-6));
-    overflow-y: auto;
-}
 
 .stat-row {
     display: grid;
@@ -3511,6 +3337,173 @@ body:has(.save-bar:not([hidden])) .toasts {
 
 .stock-matrix__none {
     color: var(--c-ink-2);
+}
+
+/* ------------------------------------------------- hero slides list */
+
+/* The move buttons and the slide's place in the order, as one control. */
+.reorder {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.reorder__n {
+    min-inline-size: 1.5em;
+    color: var(--c-ink-2);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+/* What the slide looks like, in 40px: the card's background with the shirt's
+   colour on it. */
+.slide-swatch {
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--c-line);
+}
+
+.slide-swatch::after {
+    content: '';
+    display: block;
+    inline-size: 16px;
+    block-size: 16px;
+    margin: 12px;
+    border-radius: var(--radius-pill-token);
+    background: var(--swatch);
+}
+
+.slide-table [data-row] {
+    cursor: grab;
+}
+
+.slide-table [data-row].is-dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+}
+
+/* A destructive item in a row menu. */
+.menu-item--danger {
+    color: var(--c-danger);
+}
+
+/* A form inside a row menu is only there to carry the post. */
+.row-menu__list form {
+    display: contents;
+}
+
+/* ------------------------------------------------ the slide editor */
+
+/* The frame is sized and scaled by admin-hero.js: it is the device's real
+   width and only drawn smaller, so the hero answers its own media queries. */
+.preview-stage {
+    overflow: hidden;
+    inline-size: 100%;
+}
+
+.preview-frame {
+    display: block;
+    inline-size: 1440px;
+    block-size: 760px;
+    border: 0;
+    border-radius: var(--r-tile);
+    background: var(--c-surface-2);
+    transform-origin: 0 0;
+}
+
+.preview-frame:dir(rtl) {
+    transform-origin: 100% 0;
+}
+
+/* The stage holds the painted height, so the panes beside it are not pushed
+   down by space the frame is not using. */
+.studio__stage:has(.preview-stage) {
+    padding: var(--space-3);
+}
+
+/* A path that was chosen, with a picture of what it points at. */
+.picker {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.picker__frame {
+    display: grid;
+    place-items: center;
+    aspect-ratio: var(--drop-ratio, 4 / 3);
+    overflow: hidden;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-tile);
+    background: var(--c-surface-2);
+}
+
+.picker__preview {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+}
+
+.picker__empty {
+    color: var(--c-ink-2);
+}
+
+.picker__empty .icon {
+    inline-size: 32px;
+    block-size: 32px;
+}
+
+.picker__bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* The stored path: readable and copyable, never the way it is set. */
+.input--path {
+    font-size: var(--fs-caption);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.colour-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.colour-field .input {
+    flex: 1 1 10rem;
+    min-inline-size: 0;
+}
+
+/* The native colour well, given the dashboard's shape. */
+.colour-field__swatch {
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    flex: none;
+    padding: 2px;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-tile);
+    background: var(--c-surface);
+    cursor: pointer;
+}
+
+.colour-field__swatch::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.colour-field__swatch::-webkit-color-swatch {
+    border: 0;
+    border-radius: calc(var(--r-tile) - 3px);
+}
+
+.colour-field__swatch::-moz-color-swatch {
+    border: 0;
+    border-radius: calc(var(--r-tile) - 3px);
+}
+
+.colour-field__swatch:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
 }
 
 /* ------------------------------------------------------- stock page */

@@ -32,7 +32,7 @@ const lookups = JSON.parse(document.getElementById('hero-editor-lookups')?.textC
 const modelFields = document.querySelector('[data-model-fields]');
 const placementField = document.querySelector('[data-placement-field]');
 const hasModelBox = document.getElementById('has-model');
-const designSelect = document.getElementById('design-id');
+const designSelect = document.getElementById('f-design-id');
 
 // Guard against [] arriving where {} was meant: assigning named keys to an
 // array works, but JSON.stringify then throws them away.
@@ -159,6 +159,7 @@ window.addEventListener('message', (event) => {
     if (message.type === 'layout') {
         layout = toObject(message.layout);
         layoutField.value = JSON.stringify(layout);
+        markDirty();
     }
 });
 
@@ -289,16 +290,116 @@ fileInput.addEventListener('change', async () => {
             throw new Error(result.error ?? 'تعذّر الرفع.');
         }
 
-        form.elements[uploadTarget].value = result.path;
+        const field = form.elements[uploadTarget];
+        field.value = result.path;
+        showPicked(field);
+        markDirty();
         syncPreview();
     } catch (error) {
-        alert(error.message);
+        window.adminToast?.(error.message, 'error');
     }
 });
 
+/* ------------------------------------------------------- image pickers */
+
+/*
+ * A picker is a path field with a picture of what it points at. The upload
+ * button above fills it; this keeps the thumbnail and the clear button in
+ * step, including when the path is typed or pasted.
+ */
+function showPicked(field) {
+    const picker = field.closest?.('[data-picker]');
+
+    if (!picker) {
+        return;
+    }
+
+    const preview = picker.querySelector('[data-picker-preview]');
+    const empty = picker.querySelector('[data-picker-empty]');
+    const clear = picker.querySelector('[data-picker-clear]');
+    const path = field.value.trim();
+
+    if (path === '') {
+        preview.removeAttribute('src');
+    } else {
+        preview.src = path;
+    }
+
+    preview.hidden = path === '';
+    empty.hidden = path !== '';
+    if (clear) {
+        clear.hidden = path === '';
+    }
+}
+
+document.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('[data-picker-clear]') : null;
+    const field = button && document.getElementById(button.dataset.pickerClear);
+
+    if (!field) {
+        return;
+    }
+
+    field.value = '';
+    showPicked(field);
+    markDirty();
+    syncPreview();
+    field.focus();
+});
+
+for (const field of document.querySelectorAll('[data-picker] input[type="text"]')) {
+    field.addEventListener('input', () => showPicked(field));
+    showPicked(field);
+}
+
+/* ------------------------------------------- sections and their fields */
+
+// Picking a section shows its fields, and picking a tab marks its section --
+// one choice, two places, as the product editor does it.
+const studio = document.getElementById('slide-studio');
+
+if (studio) {
+    const mark = (key) => {
+        for (const row of studio.querySelectorAll('.studio__layers [data-studio-item]')) {
+            const on = row.dataset.studioItem === key;
+            row.classList.toggle('is-selected', on);
+            row.setAttribute('aria-selected', String(on));
+        }
+    };
+
+    studio.addEventListener('studio:select', (event) => {
+        const tab = document.getElementById('slide-studio-tab-' + event.detail.key);
+        if (tab && tab.getAttribute('aria-selected') !== 'true') {
+            tab.click();
+        }
+        mark(event.detail.key);
+    });
+
+    for (const tab of studio.querySelectorAll('[data-studio-tab]')) {
+        tab.addEventListener('click', () => mark(tab.id.replace('slide-studio-tab-', '')));
+    }
+
+    const reveal = (el) => {
+        const panel = el?.closest('.studio__tabpanel');
+        if (panel?.hidden) {
+            document.querySelector('[aria-controls="' + panel.id + '"]')?.click();
+        }
+    };
+
+    document.addEventListener('click', (event) => {
+        const link = event.target instanceof Element ? event.target.closest('.error-summary a[href^="#"]') : null;
+        if (link) {
+            reveal(document.getElementById(link.getAttribute('href').slice(1)));
+        }
+    }, true);
+
+    // After a refused save, open the tab holding the first field in trouble.
+    reveal(form.querySelector('[aria-invalid="true"], .form-field--error'));
+}
+
 /* ------------------------------------------------------------ form wiring */
 
-const bgValue = document.getElementById('background-value');
+const bgValue = document.getElementById('f-background-value');
 const bgColor = document.getElementById('background-color');
 
 bgColor.addEventListener('input', () => {
@@ -312,16 +413,37 @@ bgValue.addEventListener('input', () => {
     }
 });
 
-document.getElementById('reset-layout').addEventListener('click', () => {
+document.getElementById('slide-reset-layout')?.addEventListener('click', () => {
     layout = {};
     syncPreview();
+    markDirty();
 });
+
+function markDirty() {
+    form.dispatchEvent(new Event('change', { bubbles: true }));
+}
 
 form.addEventListener('input', (event) => {
     if (event.target.matches('[data-live]')) {
         syncPreview();
     }
 });
+
+form.addEventListener('change', (event) => {
+    if (event.target instanceof Element && event.target.matches('[data-live]')) {
+        syncPreview();
+    }
+});
+
+/* Discard puts the controls back; the preview and the pictures follow. */
+form.addEventListener('reset', () => setTimeout(() => {
+    layout = toObject(JSON.parse(layoutField.dataset.initial || '{}'));
+    layoutField.value = JSON.stringify(layout);
+    for (const field of document.querySelectorAll('[data-picker] input[type="text"]')) {
+        showPicked(field);
+    }
+    syncPreview();
+}));
 
 form.addEventListener('submit', () => {
     layoutField.value = JSON.stringify(layout);

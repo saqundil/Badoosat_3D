@@ -12,6 +12,7 @@ use App\Support\CacheInterface;
 use App\Support\Config;
 use App\Support\Garment;
 use App\Support\HeroModels;
+use App\Support\Lang;
 use App\Support\Validator;
 
 /**
@@ -185,12 +186,21 @@ final class HeroSlideService
             'garment_color'     => '#E7E4DC',
             'design_image_path' => null,
             'background_value'  => '#141414',
-            'tab_word'          => 'قصّة واسعة',
-            'wordmark'          => 'OVERSIZE',
+            /*
+             * Empty, on purpose.
+             *
+             * These used to arrive filled with the first slide's own words, so
+             * a new slide that was saved without being read published a
+             * duplicate of a live one -- and hero_slides #17 is one that was.
+             * A new slide carries only what it cannot be without: a model to
+             * show, a colour, a background, and where its button goes.
+             */
+            'tab_word'          => '',
+            'wordmark'          => '',
             'tagline'           => '',
             'stats'             => [
-                ['value' => '٢٤٠ غم', 'label' => 'قطن ممشّط'],
-                ['value' => '٥٠ غسلة', 'label' => 'يبقى كما هو'],
+                ['value' => '', 'label' => ''],
+                ['value' => '', 'label' => ''],
             ],
             'layout'            => [],
             /*
@@ -202,7 +212,7 @@ final class HeroSlideService
              * field: an administrator who wants a slide pointing somewhere else
              * types somewhere else.
              */
-            'cta_label'         => 'صمّم التيشيرت الخاص بك',
+            'cta_label'         => Lang::get('admin.slide.default_cta'),
             'cta_url'           => '/design.php',
             'sort_order'        => $this->slides->nextSortOrder(),
             'is_active'         => true,
@@ -214,8 +224,8 @@ final class HeroSlideService
     {
         $v = new Validator($input);
 
-        $v->assetPath('poster_path', 'اللقطة الثابتة', '', true);
-        $v->assetPath('design_image_path', 'التصميم المطبوع', '', true);
+        $v->assetPath('poster_path', Lang::get('admin.slide.f.poster_path'), '', true);
+        $v->assetPath('design_image_path', Lang::get('admin.slide.f.design_image_path'), '', true);
 
         $this->validateModel($input, $v);
 
@@ -224,25 +234,25 @@ final class HeroSlideService
         $background = $v->string('background_value');
 
         if (!Validator::isHex($background) && !Validator::isAssetPath($background)) {
-            $v->fail('background_value', 'الخلفية يجب أن تكون لونًا ‎#RRGGBB أو مسار صورة.');
+            $v->fail('background_value', Lang::get('admin.slide.err.background'));
         }
 
-        $v->maxLength('tab_word', 40, 'كلمة اللسان');
-        $v->maxLength('wordmark', 40, 'الكلمة العملاقة');
-        $v->maxLength('tagline', 200, 'السطر التسويقي');
-        $v->maxLength('cta_label', 120, 'نص الزر');
-        $v->link('cta_url', 'رابط الزر');
+        $v->maxLength('tab_word', 40, Lang::get('admin.slide.f.tab_word'));
+        $v->maxLength('wordmark', 40, Lang::get('admin.slide.f.wordmark'));
+        $v->maxLength('tagline', 200, Lang::get('admin.slide.f.tagline'));
+        $v->maxLength('cta_label', 120, Lang::get('admin.slide.f.cta_label'));
+        $v->link('cta_url', Lang::get('admin.slide.f.cta_url'));
 
-        $v->jsonList('stats', 'بطاقتا الإحصاء', self::STAT_COUNT, static function (array $stat, int $n): ?string {
+        $v->jsonList('stats', Lang::get('admin.slide.f.stats'), self::STAT_COUNT, static function (array $stat, int $n): ?string {
             $value = trim((string) ($stat['value'] ?? ''));
             $label = trim((string) ($stat['label'] ?? ''));
 
             if ($value === '' || $label === '') {
-                return 'بطاقة الإحصاء ' . $n . ' تحتاج قيمة وعنوانًا.';
+                return Lang::get('admin.slide.err.stat_empty', ['n' => $n]);
             }
 
             if (mb_strlen($value) > 20 || mb_strlen($label) > 40) {
-                return 'بطاقة الإحصاء ' . $n . ' أطول من المسموح.';
+                return Lang::get('admin.slide.err.stat_long', ['n' => $n]);
             }
 
             return null;
@@ -250,12 +260,12 @@ final class HeroSlideService
 
         if (count(Validator::decodeList($input['stats'] ?? null)) !== self::STAT_COUNT
             && !isset($v->errors()['stats'])) {
-            $v->fail('stats', 'التصميم يتّسع لبطاقتَي إحصاء بالضبط.');
+            $v->fail('stats', Lang::get('admin.slide.err.stat_count'));
         }
 
         foreach (self::decodeLayout($input['layout'] ?? null) as $element => $nudge) {
             if (abs($nudge['dx']) > self::MAX_NUDGE || abs($nudge['dy']) > self::MAX_NUDGE) {
-                $v->fail('layout', 'إزاحة العنصر «' . $element . '» خارج حدود البطاقة.');
+                $v->fail('layout', Lang::get('admin.slide.err.layout', ['element' => $element]));
 
                 break;
             }
@@ -281,15 +291,15 @@ final class HeroSlideService
         $modelKey = trim((string) ($input['model_key'] ?? ''));
 
         if (!HeroModels::has($modelKey)) {
-            $v->fail('model_key', 'اختر مجسّمًا من القائمة.');
+            $v->fail('model_key', Lang::get('admin.slide.err.model'));
         }
 
         $colorId = self::optionalId($input['color_id'] ?? null);
 
         if ($colorId === null) {
-            $v->fail('color_id', 'اختر لون القميص.');
+            $v->fail('color_id', Lang::get('admin.slide.err.colour'));
         } elseif ($this->colorHex($colorId) === null) {
-            $v->fail('color_id', 'اللون المختار لم يعد موجودًا في جدول الألوان.');
+            $v->fail('color_id', Lang::get('admin.slide.err.colour_gone'));
         }
 
         $designId = self::optionalId($input['design_id'] ?? null);
@@ -300,15 +310,15 @@ final class HeroSlideService
         }
 
         if ($this->designs->find($designId) === null) {
-            $v->fail('design_id', 'التصميم المختار لم يعد موجودًا.');
+            $v->fail('design_id', Lang::get('admin.slide.err.design_gone'));
         }
 
         $placement = trim((string) ($input['placement'] ?? ''));
 
         if ($placement === '') {
-            $v->fail('placement', 'حدّد موضع التصميم على القميص.');
+            $v->fail('placement', Lang::get('admin.slide.err.placement_missing'));
         } elseif (!in_array($placement, self::PLACEMENTS, true)) {
-            $v->fail('placement', 'موضع الطباعة غير معروف.');
+            $v->fail('placement', Lang::get('admin.slide.err.placement_unknown'));
         }
     }
 
