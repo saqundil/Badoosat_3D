@@ -21,6 +21,8 @@ declare(strict_types=1);
  * @var int     $minWidth    0 = no hint
  * @var int     $minHeight
  * @var ?string $removeName  checkbox name that clears the stored image
+ * @var string  $removeValue the checkbox's value (default '1'; a shared name needs the key)
+ * @var ?bool   $removeShow  show the clear box even with no preview (a stored path whose file is gone)
  * @var string  $ratio       CSS aspect-ratio of the slot, e.g. "4 / 5"
  * @var bool    $multiple    several files at once (the name gets [] added); the
  *                           preview shows the first, the status counts them
@@ -44,6 +46,8 @@ $ratio      ??= '4 / 3';
 $multiple   ??= false;
 $inputAttrs ??= [];
 $removeAttrs ??= [];
+$removeValue ??= '1';
+$removeShow ??= $current !== null;
 
 $extra = static function (array $attrs): string {
     $out = '';
@@ -84,9 +88,9 @@ $limit = UploadLimit::bytes();
             </label>
             <input class="dropzone__input" type="file" id="<?= e($id) ?>" name="<?= e($name . ($multiple ? '[]' : '')) ?>" accept="<?= e($accept) ?>"
                    aria-labelledby="<?= e($id) ?>-label" aria-describedby="<?= e($id) ?>-status<?= $help !== null ? ' ' . e($id) . '-help' : '' ?>"<?= $multiple ? ' multiple' : '' ?><?= $extra($inputAttrs) ?>>
-            <?php if ($current !== null && $removeName !== null) { ?>
+            <?php if ($removeShow && $removeName !== null) { ?>
                 <label class="check check--small">
-                    <input type="checkbox" name="<?= e($removeName) ?>" value="1" data-drop-remove<?= $extra($removeAttrs) ?>>
+                    <input type="checkbox" name="<?= e($removeName) ?>" value="<?= e($removeValue) ?>" data-drop-remove<?= $extra($removeAttrs) ?>>
                     <span class="check__box" aria-hidden="true"></span>
                     <span class="check__text"><?= e(Lang::get('admin.form.drop_remove')) ?></span>
                 </label>

@@ -10,6 +10,7 @@ use App\Support\Auth;
 use App\Support\Config;
 use App\Support\Csrf;
 use App\Support\Db;
+use App\Support\Lang;
 use App\Support\Response;
 use App\Support\Uploader;
 use App\Support\UploadException;
@@ -50,22 +51,36 @@ Csrf::require($_POST);
 $service = HomeSettingsService::make();
 $action  = (string) ($_POST['action'] ?? '');
 
-/** Puts the reason in the session and goes back; see admin/home.php on why. */
-$fail = static function (string $message): never {
-    $_SESSION['home_error'] = $message;
+/**
+ * Puts the reasons and what was typed in the session and goes back.
+ *
+ * The sentence can be a sentence, and a sentence in a URL is one a visitor can
+ * rewrite and have echoed back at them -- so it travels in the session. The
+ * values travel with it so a refused save does not cost the owner their work;
+ * the chosen FILES cannot, because a browser will not let a page put them back.
+ *
+ * @param array<string,string> $errors field => message
+ */
+$fail = static function (array $errors): never {
+    $_SESSION['home_errors'] = $errors;
+    $_SESSION['home_old'] = $_POST;
     Response::redirect('/admin/home.php');
 };
 
-if ($action === 'trending') {
-    /*
-     * Everything is cleared first, then the ticked rows are set.
-     *
-     * A form that only writes what it was sent cannot express "this one is no
-     * longer trending" -- an unticked checkbox sends nothing at all, so the row
-     * would keep its old flag forever and unticking would appear not to work. One
-     * UPDATE to zero the column, then one per selected row, in a transaction so a
-     * failure halfway cannot leave the home page empty.
-     */
+/*
+ * ONE SAVE, TWO DECISIONS
+ *
+ * The page used to post twice: the pictures and wording in one form, the
+ * trending list in another, each with its own button. Two Save buttons on one
+ * screen is one too many -- neither says what it will leave alone. They are
+ * written together now, and nothing is written until both have been checked.
+ */
+if ($action !== 'save') {
+    Response::error('Unknown action.', 400);
+}
+
+/* ------------------------------------------------- the trending list, checked */
+{
     $ids = array_values(array_unique(array_map('intval', (array) ($_POST['trending'] ?? []))));
     $ids = array_values(array_filter($ids, static fn (int $id): bool => $id > 0));
 
@@ -76,48 +91,13 @@ if ($action === 'trending') {
      * with the reason, rather than silently dropped by a LIMIT.
      */
     if (count($ids) > 8) {
-        $fail('اخترت ' . count($ids) . ' منتجًا، والحد الأقصى ثمانية. أزل بعض الاختيارات ثم احفظ.');
+        $fail(['trending' => Lang::get('admin.home.err.too_many', ['n' => count($ids), 'max' => 8])]);
     }
 
     $orders = (array) ($_POST['order'] ?? []);
-    $pdo    = Db::pdo();
-
-    $pdo->beginTransaction();
-
-    try {
-        $pdo->exec('UPDATE products SET is_trending = 0, trending_order = 0 WHERE is_trending = 1');
-
-        if ($ids !== []) {
-            $stmt = $pdo->prepare(
-                'UPDATE products SET is_trending = 1, trending_order = ? WHERE id = ?'
-            );
-
-            foreach ($ids as $id) {
-                // Clamped to the column's range rather than trusted: the input has
-                // min and max attributes, and neither of those is a constraint.
-                $order = max(0, min(999, (int) ($orders[$id] ?? 0)));
-                $stmt->execute([$order, $id]);
-            }
-        }
-
-        $pdo->commit();
-    } catch (Throwable $e) {
-        $pdo->rollBack();
-        error_log('Trending save failed — ' . $e->getMessage());
-        $fail('تعذّر حفظ المنتجات الرائجة. حاول مرة أخرى.');
-    }
-
-    // The strip is cached, so a save has to say so; nothing else will.
-    ProductService::make()->forgetCache();
-
-    Response::redirect('/admin/home.php?trending=1');
 }
 
-if ($action !== 'settings') {
-    $fail('طلب غير معروف.');
-}
-
-/* ------------------------------------------------------------------ the text */
+/* ----------------------------------------------- the banner's three texts */
 
 /*
  * Trimmed, and an empty string is kept as an empty string rather than rejected: an
@@ -182,7 +162,7 @@ foreach (HomeSettingsService::IMAGE_KEYS as $key) {
         $result = $uploader->store($file, 'home');
     } catch (UploadException $e) {
         // The class's messages are already written for the shop owner in Arabic.
-        $fail($e->getMessage());
+        $fail(['images' => $e->getMessage()]);
     }
 
     /*
@@ -199,7 +179,7 @@ foreach (HomeSettingsService::IMAGE_KEYS as $key) {
             unlink($path);
         }
 
-        $fail('صور الواجهة تكون JPEG أو PNG أو WebP. صيغة SVG غير مناسبة هنا.');
+        $fail(['images' => Lang::get('admin.home.err.svg')]);
     }
 
     $values[$key] = $result['path'];
@@ -235,5 +215,40 @@ foreach (array_unique($superseded) as $path) {
         unlink($absolute);
     }
 }
+
+/* ------------------------------------------------------ the trending list */
+
+/*
+ * Everything is cleared first, then the ticked rows are set.
+ *
+ * A form that only writes what it was sent cannot express "this one is no
+ * longer trending" -- an unticked checkbox sends nothing at all, so the row
+ * would keep its old flag forever and unticking would appear not to work. One
+ * UPDATE to zero the column, then one per selected row, in a transaction so a
+ * failure halfway cannot leave the home page empty.
+ */
+$pdo = Db::pdo();
+$pdo->beginTransaction();
+
+try {
+    $pdo->exec('UPDATE products SET is_trending = 0, trending_order = 0 WHERE is_trending = 1');
+
+    if ($ids !== []) {
+        $stmt = $pdo->prepare('UPDATE products SET is_trending = 1, trending_order = ? WHERE id = ?');
+
+        foreach ($ids as $id) {
+            // Clamped to the column's range rather than trusted: the input has
+            // min and max attributes, and neither of those is a constraint.
+            $stmt->execute([max(0, min(999, (int) ($orders[$id] ?? 0))), $id]);
+        }
+    }
+
+    $pdo->commit();
+} catch (Throwable $e) {
+    $pdo->rollBack();
+    $fail(['trending' => Lang::get('admin.home.err.trending')]);
+}
+
+ProductService::make()->forgetCache();
 
 Response::redirect('/admin/home.php?saved=1');

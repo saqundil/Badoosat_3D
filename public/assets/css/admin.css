@@ -3506,6 +3506,109 @@ body:has(.save-bar:not([hidden])) .toasts {
     outline-offset: var(--focus-offset);
 }
 
+/* -------------------------------------------------- homepage settings */
+
+/* The banner's fields and the banner, side by side. */
+.promo-editor {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: var(--space-5);
+    align-items: start;
+}
+
+.promo-preview {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+/* The shop's own banner in miniature: a dark card, a heading, a line and a
+   pill. Not the live component -- it carries none of its behaviour -- so it
+   says what it is above it. */
+.promo-card {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--c-night);
+    color: var(--c-night-ink);
+}
+
+.promo-card__title {
+    font-size: var(--fs-card-title);
+    font-weight: var(--weight-bold);
+}
+
+.promo-card__text {
+    color: var(--c-night-ink-2);
+    font-size: var(--fs-small);
+}
+
+.promo-card__button {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 36px;
+    margin-block-start: var(--space-2);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-pill-token);
+    background: var(--c-surface);
+    color: var(--c-ink);
+    font-size: var(--fs-small);
+    font-weight: var(--weight-semibold);
+}
+
+/* The trending picker: one row per product, ticked rows called out. */
+.trending-list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.trending-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2);
+    border: 1px solid transparent;
+    border-radius: var(--r-tile);
+}
+
+.trending-row:hover {
+    background: var(--c-surface-2);
+}
+
+.trending-row.is-on {
+    border-color: var(--c-accent);
+    background: var(--c-accent-soft);
+}
+
+/* A row that cannot be ticked because eight already are. */
+.trending-row:has(input[type='checkbox']:disabled) {
+    opacity: 0.55;
+}
+
+.trending-row .cell-media__text {
+    flex: 1 1 10rem;
+}
+
+.trending-row__warn {
+    color: var(--c-danger);
+}
+
+.trending-row__order {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.trending-row__order .input--cell {
+    min-inline-size: 4.5em;
+}
+
 /* ------------------------------------------------------- stock page */
 
 /* The page's one line of figures, above the products. */

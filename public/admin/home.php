@@ -6,15 +6,19 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 use App\Service\HomeSettingsService;
 use App\Support\Auth;
+use App\Support\Config;
 use App\Support\Csrf;
 use App\Support\Db;
+use App\Support\Format;
+use App\Support\Lang;
 use App\Support\UploadLimit;
 
 Auth::require();
+Csrf::session();
 
 /*
- * The landing page's own screen: the two category photographs, the banner over the
- * design editor, and which products are trending.
+ * The landing page's own screen (template E): the two category photographs, the
+ * banner over the design editor, and which products are trending.
  *
  * WHY THE TRENDING PICKER IS ON THIS PAGE AND NOT ON THE PRODUCT FORM
  *
@@ -24,6 +28,12 @@ Auth::require();
  * exactly the thing the owner is deciding. One screen showing all of them together
  * is the screen where that decision can actually be made.
  *
+ * ONE SAVE
+ *
+ * The pictures, the wording and the trending list used to be two forms with a
+ * Save button each. They are one form now, with the dashboard's save bar, and
+ * home-save.php writes nothing until all of it has been checked.
+ *
  * stored() rather than settings(): the form must show an empty field as empty. If
  * it read the page's own getter it would print the fallback text into the input,
  * and the next save would write the default into the database as though the owner
@@ -31,6 +41,17 @@ Auth::require();
  */
 $service  = HomeSettingsService::make();
 $settings = $service->stored();
+
+$errors = $_SESSION['home_errors'] ?? [];
+$old    = $_SESSION['home_old'] ?? null;
+unset($_SESSION['home_errors'], $_SESSION['home_old']);
+
+/* A refused save comes back with what was typed, not with what is stored. */
+if (is_array($old)) {
+    foreach (['promo_title', 'promo_text', 'promo_button'] as $key) {
+        $settings[$key] = (string) ($old[$key] ?? $settings[$key]);
+    }
+}
 
 /*
  * The product list for the picker, read straight from the table.
@@ -41,247 +62,210 @@ $settings = $service->stored();
  * precisely the state the owner needs to see and fix.
  */
 $products = Db::pdo()->query(
-    'SELECT p.id, p.name, p.is_active, p.is_trending, p.trending_order, p.image_path,
-            g.name_ar AS garment_name
+    'SELECT p.id, p.name, p.slug, p.is_active, p.is_trending, p.trending_order, p.image_path,
+            g.name_ar AS garment_name_ar, g.name_en AS garment_name_en
        FROM products p
   LEFT JOIN garments g ON g.id = p.garment_id
    ORDER BY p.is_trending DESC, p.trending_order ASC, p.name ASC'
 )->fetchAll();
 
-$trendingCount = count(array_filter(
+/* What the form shows: the ticks that were posted, or the ones that are stored. */
+$ticked = is_array($old)
+    ? array_map('intval', (array) ($old['trending'] ?? []))
+    : array_column(array_filter($products, static fn (array $p): bool => (int) $p['is_trending'] === 1), 'id');
+$ticked = array_map('intval', $ticked);
+$orders = is_array($old) ? (array) ($old['order'] ?? []) : [];
+
+$chosen  = count($ticked);
+$unusable = count(array_filter(
     $products,
-    static fn (array $p): bool => (int) $p['is_trending'] === 1 && (int) $p['is_active'] === 1
+    static fn (array $p): bool => in_array((int) $p['id'], $ticked, true) && (int) $p['is_active'] !== 1
 ));
 
 $notice = match (true) {
-    isset($_GET['saved'])    => 'تم حفظ إعدادات الواجهة.',
-    isset($_GET['trending']) => 'تم تحديث المنتجات الرائجة.',
+    isset($_GET['saved'])    => Lang::get('admin.home.saved'),
+    isset($_GET['trending']) => Lang::get('admin.home.saved'),
     default                  => null,
 };
 
-/*
- * An upload that failed says so on the next page load, through the session rather
- * than the query string: the reason can be a sentence, and a sentence in a URL is
- * a sentence a visitor can rewrite and have echoed back at them.
- */
-$error = $_SESSION['home_error'] ?? null;
-unset($_SESSION['home_error']);
-
-$title   = 'إعدادات الواجهة';
-$current = 'home';
+$locale = Lang::locale();
+$public = (string) Config::get('app.paths.public');
+$exists = static fn (string $path): bool => $path !== '' && !str_contains($path, '..') && is_file($public . $path);
 
 /** The three image fields, so the markup below is one loop rather than three. */
 $images = [
-    'printed_card_image' => ['بطاقة "الملابس المطبوعة"', 'تظهر في أول قسم تحت الهيرو. يُفضّل صورة رأسية بنسبة ٤:٥.'],
-    'plain_card_image'   => ['بطاقة "الملابس السادة"', 'بنفس مقاس البطاقة الأولى حتى تتساوى البطاقتان.'],
-    'promo_image'        => ['خلفية إعلان "صمّم بنفسك"', 'صورة عريضة. إن تركتها فارغة يُرسم تدرّج سكني أنيق بدلًا منها.'],
+    'printed_card_image' => ['4 / 5', 'printed'],
+    'plain_card_image'   => ['4 / 5', 'plain'],
+    'promo_image'        => ['16 / 6', 'promo'],
 ];
 
-$body = static function () use ($settings, $images, $products, $trendingCount, $notice, $error): void {
+$title   = Lang::get('admin.home.title');
+$current = 'home';
+$toast   = $notice !== null ? ['text' => $notice] : null;
+
+$body = static function () use (
+    $settings, $images, $products, $ticked, $orders, $chosen, $unusable, $errors, $exists, $locale
+): void {
+    $err = static fn (string $key): ?string => $errors[$key] ?? null;
+    $defaults = HomeSettingsService::DEFAULTS;
     ?>
-    <main class="admin__body">
-        <div class="admin__head">
-            <div>
-                <h1>إعدادات الواجهة الرئيسية</h1>
-                <p class="hint">
-                    صور القسمين، وإعلان "صمّم بنفسك"، والمنتجات الرائجة.
-                    كل ما تحفظه هنا يظهر في الصفحة الرئيسية فورًا.
-                </p>
-            </div>
-            <a class="button" href="/" target="_blank" rel="noopener">معاينة الصفحة</a>
-        </div>
+    <main class="dash">
+        <?php admin_partial('page-header', [
+            'title'    => Lang::get('admin.home.title'),
+            'subtitle' => Lang::get('admin.home.subtitle'),
+            'actions'  => static function (): void { ?>
+                <a class="button button--secondary" href="/" target="_blank" rel="noopener">
+                    <?= admin_icon('external') ?><?= e(Lang::get('admin.home.view')) ?>
+                </a>
+            <?php },
+        ]); ?>
 
-        <?php if ($notice !== null) { ?>
-            <p class="alert alert--ok"><?= e($notice) ?></p>
-        <?php } ?>
+        <?php admin_partial('form/error-summary', [
+            'errors' => $errors,
+            'ids'    => ['images' => 'f-printed-card-image', 'trending' => 'home-trending'],
+        ]); ?>
 
-        <?php if ($error !== null) { ?>
-            <p class="alert alert--error"><?= e((string) $error) ?></p>
-        <?php } ?>
-
-        <?php /*
-            enctype is on the form because it carries files. Without it the browser
-            sends the file names and not the files, and the handler sees an empty
-            $_FILES with no error in it -- which looks exactly like "no file was
-            chosen" and is the single most confusing way an upload form can fail.
-        */ ?>
-        <form method="post" action="/admin/home-save.php" enctype="multipart/form-data">
+        <form id="home-form" method="post" action="/admin/home-save.php" enctype="multipart/form-data" data-watch>
             <?= Csrf::field() ?>
-            <input type="hidden" name="action" value="settings">
+            <input type="hidden" name="action" value="save">
+            <input type="hidden" name="MAX_FILE_SIZE" value="<?= UploadLimit::bytes() ?>">
 
-            <section class="panel">
-                <h2>صور الأقسام والإعلان</h2>
-
-                <div class="home-admin__grid">
-                    <?php foreach ($images as $key => [$label, $hint]) { ?>
-                        <div class="home-admin__field">
-                            <h3 class="home-admin__label"><?= e($label) ?></h3>
-
-                            <?php /*
-                                The current image, shown before anything is chosen.
-                                An upload form that does not show what is already
-                                stored makes the owner open the site in another tab
-                                to find out whether they are about to replace the
-                                right picture.
-                            */ ?>
-                            <div class="home-admin__preview">
-                                <?php if ($settings[$key] !== '') { ?>
-                                    <img src="<?= e($settings[$key]) ?>" alt="<?= e($label) ?>"
-                                         width="320" height="200" loading="lazy" decoding="async">
-                                <?php } else { ?>
-                                    <span class="home-admin__empty">لا صورة — سيُستخدم التدرّج</span>
-                                <?php } ?>
+            <?php admin_partial('settings', [
+                'label' => Lang::get('admin.home.sections'),
+                'sections' => [
+                    'home-images' => [
+                        'title' => Lang::get('admin.home.s.images'),
+                        'help'  => Lang::get('admin.home.s.images_help', ['mb' => UploadLimit::mebibytes(UploadLimit::bytes())]),
+                        'body'  => static function () use ($images, $settings, $exists, $err): void { ?>
+                            <div class="form-grid">
+                                <?php foreach ($images as $key => [$ratio, $slug]) {
+                                    $current = (string) $settings[$key];
+                                    admin_partial('form/dropzone', [
+                                        'name'       => $key,
+                                        'label'      => Lang::get('admin.home.f.' . $slug),
+                                        'current'    => $exists($current) ? $current : null,
+                                        'removeName'  => 'clear[]',
+                                        'removeValue' => $key,
+                                        'removeShow'  => $current !== '',
+                                        'ratio'      => $ratio,
+                                        'accept'     => 'image/jpeg,image/png,image/webp',
+                                        'help'       => Lang::get('admin.home.f.' . $slug . '_help')
+                                            . ($current !== '' && !$exists($current) ? ' ' . Lang::get('admin.home.file_missing') : ''),
+                                        'error'      => $err('images'),
+                                    ]);
+                                } ?>
                             </div>
+                        <?php },
+                    ],
 
-                            <label class="field">
-                                <span>استبدال الصورة</span>
-                                <?php /*
-                                    accept is a convenience for the file picker and
-                                    nothing more. The handler checks the real type
-                                    with finfo, because this attribute is a hint the
-                                    browser may ignore and an attacker will.
-                                */ ?>
-                                <input type="file" name="<?= e($key) ?>"
-                                       accept="image/jpeg,image/png,image/webp">
-                            </label>
+                    'home-promo' => [
+                        'title' => Lang::get('admin.home.s.promo'),
+                        'help'  => Lang::get('admin.home.s.promo_help'),
+                        'body'  => static function () use ($settings, $defaults): void { ?>
+                            <div class="promo-editor">
+                                <div class="form-stack">
+                                    <?php admin_partial('form/field', [
+                                        'type' => 'text', 'name' => 'promo_title', 'label' => Lang::get('admin.home.f.promo_title'),
+                                        'value' => (string) $settings['promo_title'], 'maxlength' => 120, 'dir' => 'auto',
+                                        'attrs' => ['placeholder' => $defaults['promo_title'], 'data-promo' => 'title'],
+                                    ]); ?>
+                                    <?php admin_partial('form/field', [
+                                        'type' => 'textarea', 'name' => 'promo_text', 'label' => Lang::get('admin.home.f.promo_text'),
+                                        'value' => (string) $settings['promo_text'], 'maxlength' => 400, 'dir' => 'auto',
+                                        'attrs' => ['placeholder' => $defaults['promo_text'], 'rows' => 3, 'data-promo' => 'text'],
+                                    ]); ?>
+                                    <?php admin_partial('form/field', [
+                                        'type' => 'text', 'name' => 'promo_button', 'label' => Lang::get('admin.home.f.promo_button'),
+                                        'value' => (string) $settings['promo_button'], 'maxlength' => 40, 'dir' => 'auto',
+                                        'attrs' => ['placeholder' => $defaults['promo_button'], 'data-promo' => 'button'],
+                                    ]); ?>
+                                    <p class="form-field__help"><?= e(Lang::get('admin.home.promo_default_help')) ?></p>
+                                </div>
 
-                            <?php if ($settings[$key] !== '') { ?>
-                                <label class="field field--check">
-                                    <input type="checkbox" name="clear[]" value="<?= e($key) ?>">
-                                    <span>حذف الصورة الحالية</span>
-                                </label>
+                                <?php /* The banner as the visitor meets it, with the
+                                         defaults standing in for anything left empty. */ ?>
+                                <figure class="promo-preview" aria-labelledby="promo-preview-title">
+                                    <figcaption class="form-field__label" id="promo-preview-title"><?= e(Lang::get('admin.home.preview')) ?></figcaption>
+                                    <div class="promo-card" data-promo-card>
+                                        <p class="promo-card__title" data-promo-out="title"><bdi><?= e((string) ($settings['promo_title'] ?: $defaults['promo_title'])) ?></bdi></p>
+                                        <p class="promo-card__text" data-promo-out="text"><bdi><?= e((string) ($settings['promo_text'] ?: $defaults['promo_text'])) ?></bdi></p>
+                                        <span class="promo-card__button" data-promo-out="button"><bdi><?= e((string) ($settings['promo_button'] ?: $defaults['promo_button'])) ?></bdi></span>
+                                    </div>
+                                </figure>
+                            </div>
+                        <?php },
+                    ],
+
+                    'home-trending' => [
+                        'title' => Lang::get('admin.home.s.trending'),
+                        'help'  => Lang::get('admin.home.s.trending_help'),
+                        'badge' => ['text' => Lang::get('admin.home.chosen', ['n' => Format::number($chosen), 'max' => Format::number(8)]),
+                                    'kind' => $chosen > 8 ? 'stopped' : 'active'],
+                        'body'  => static function () use ($products, $ticked, $orders, $unusable, $err, $exists, $locale): void {
+                            if ($products === []) {
+                                admin_partial('state', ['kind' => 'empty', 'text' => Lang::get('admin.products.empty'),
+                                    'action' => ['href' => '/admin/product-edit.php', 'text' => Lang::get('admin.products.new')]]);
+
+                                return;
+                            }
+
+                            if ($unusable > 0) { ?>
+                                <p class="alert alert--info"><?= admin_icon('alert') ?> <?= e(Format::plural('admin.home.unusable', $unusable)) ?></p>
+                            <?php }
+
+                            if ($err('trending') !== null) { ?>
+                                <p class="form-field__error"><?= admin_icon('alert') ?><span><?= e((string) $err('trending')) ?></span></p>
                             <?php } ?>
 
-                            <p class="hint"><?= e($hint) ?></p>
-                        </div>
-                    <?php } ?>
-                </div>
+                            <ul class="trending-list" data-trending data-msg-limit="<?= e(Lang::get('admin.home.limit_reached', ['max' => Format::number(8)])) ?>">
+                                <?php foreach ($products as $product) {
+                                    $id = (int) $product['id'];
+                                    $on = in_array($id, $ticked, true);
+                                    $thumb = (string) ($product['image_path'] ?? '');
+                                    $type = (string) ($locale === 'en' && trim((string) $product['garment_name_en']) !== '' ? $product['garment_name_en'] : (string) $product['garment_name_ar']);
+                                    $order = (int) ($orders[$id] ?? $product['trending_order']); ?>
+                                    <li class="trending-row<?= $on ? ' is-on' : '' ?>">
+                                        <label class="check check--bare">
+                                            <input type="checkbox" name="trending[]" value="<?= $id ?>"<?= $on ? ' checked' : '' ?>
+                                                   aria-label="<?= e(Lang::get('admin.home.pick', ['name' => $product['name']])) ?>">
+                                            <span class="check__box" aria-hidden="true"></span>
+                                        </label>
 
-                <p class="hint">
-                    الأنواع المقبولة: JPEG و PNG و WebP. الحد الأقصى للحجم
-                    <?= e(UploadLimit::mebibytes(UploadLimit::bytes())) ?> ميغابايت.
-                    تُحفظ الصور في <code dir="ltr">uploads/home/</code> باسم عشوائي،
-                    وتُحذف الصورة القديمة عند الاستبدال.
-                </p>
-            </section>
-
-            <section class="panel">
-                <h2>نصوص إعلان "صمّم بنفسك"</h2>
-
-                <label class="field">
-                    <span>العنوان</span>
-                    <input type="text" name="promo_title" maxlength="120"
-                           value="<?= e($settings['promo_title']) ?>"
-                           placeholder="<?= e(App\Service\HomeSettingsService::DEFAULTS['promo_title']) ?>">
-                </label>
-
-                <label class="field">
-                    <span>النص</span>
-                    <textarea name="promo_text" rows="3" maxlength="400"
-                              placeholder="<?= e(App\Service\HomeSettingsService::DEFAULTS['promo_text']) ?>"><?=
-                        e($settings['promo_text']) ?></textarea>
-                </label>
-
-                <label class="field">
-                    <span>نص الزر</span>
-                    <input type="text" name="promo_button" maxlength="40"
-                           value="<?= e($settings['promo_button']) ?>"
-                           placeholder="<?= e(App\Service\HomeSettingsService::DEFAULTS['promo_button']) ?>">
-                </label>
-
-                <?php /*
-                    The placeholders are the defaults, from the same constant the
-                    page falls back to. So an owner who clears a field can see what
-                    will be shown instead of it, rather than guessing.
-                */ ?>
-                <p class="hint">
-                    اتركه فارغًا ليعود إلى النص الافتراضي الظاهر باللون الباهت.
-                    زر الإعلان يفتح المحرر الحالي على <code dir="ltr">/design.php</code>.
-                </p>
-            </section>
-
-            <button type="submit" class="button button--primary">حفظ الإعدادات</button>
-        </form>
-
-        <?php /*
-            A second form, posted separately. The settings above and the trending
-            list are two different decisions, and one submit button for both means
-            a failed image upload takes the tick boxes down with it.
-        */ ?>
-        <form method="post" action="/admin/home-save.php">
-            <?= Csrf::field() ?>
-            <input type="hidden" name="action" value="trending">
-
-            <section class="panel">
-                <h2>المنتجات الرائجة</h2>
-                <p class="hint">
-                    اختر ما يظهر في شريط "المنتجات الرائجة" على الصفحة الرئيسية، والترتيب
-                    من الأصغر إلى الأكبر. تُعرض ثمانية كحد أقصى؛ المختار حاليًا:
-                    <strong><?= (int) $trendingCount ?></strong>.
-                </p>
-
-                <?php if ($products === []) { ?>
-                    <p class="hint">لا منتجات بعد. أضف منتجًا من <a href="/admin/products.php">شاشة المنتجات</a>.</p>
-                <?php } else { ?>
-                    <table class="home-admin__table">
-                        <thead>
-                            <tr>
-                                <th scope="col">رائج</th>
-                                <th scope="col">المنتج</th>
-                                <th scope="col">النوع</th>
-                                <th scope="col">الترتيب</th>
-                                <th scope="col">الحالة</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($products as $product) { ?>
-                                <tr>
-                                    <td>
-                                        <?php /*
-                                            The id travels in the checkbox's value,
-                                            and the order in a field named by id.
-                                            So an unticked row sends nothing at all
-                                            and the handler does not have to work
-                                            out which of two lists to trust.
-                                        */ ?>
-                                        <input type="checkbox" name="trending[]"
-                                               value="<?= (int) $product['id'] ?>"
-                                               aria-label="اجعل <?= e($product['name']) ?> رائجًا"
-                                               <?= (int) $product['is_trending'] === 1 ? ' checked' : '' ?>>
-                                    </td>
-                                    <td><?= e($product['name']) ?></td>
-                                    <td class="home-admin__muted"><?= e((string) ($product['garment_name'] ?? '—')) ?></td>
-                                    <td>
-                                        <input type="number" class="home-admin__order"
-                                               name="order[<?= (int) $product['id'] ?>]"
-                                               value="<?= (int) $product['trending_order'] ?>"
-                                               min="0" max="999" step="1"
-                                               aria-label="ترتيب <?= e($product['name']) ?>">
-                                    </td>
-                                    <td>
-                                        <?php if ((int) $product['is_active'] === 1) { ?>
-                                            <span class="badge badge--on">نشط</span>
+                                        <?php if ($exists($thumb)) { ?>
+                                            <img class="cell-media__thumb" src="<?= e($thumb) ?>" alt="" width="40" height="40" loading="lazy" decoding="async">
                                         <?php } else { ?>
-                                            <?php /*
-                                                Said out loud. A product marked
-                                                trending but deactivated will not
-                                                appear on the home page, and the
-                                                owner would otherwise be left
-                                                wondering why their tick did nothing.
-                                            */ ?>
-                                            <span class="badge">معطّل — لن يظهر</span>
+                                            <span class="cell-media__thumb" aria-hidden="true"></span>
                                         <?php } ?>
-                                    </td>
-                                </tr>
-                            <?php } ?>
-                        </tbody>
-                    </table>
 
-                    <button type="submit" class="button button--primary">حفظ المنتجات الرائجة</button>
-                <?php } ?>
-            </section>
+                                        <span class="cell-media__text">
+                                            <a class="cell-media__title" href="/admin/product-edit.php?id=<?= $id ?>"><bdi><?= e((string) $product['name']) ?></bdi></a>
+                                            <span class="cell-media__sub">
+                                                <?php if ($type !== '') { ?><bdi><?= e($type) ?></bdi><?php } ?>
+                                                <?php if ((int) $product['is_active'] !== 1) { ?>
+                                                    · <span class="trending-row__warn"><?= e(Lang::get('admin.home.inactive')) ?></span>
+                                                <?php } ?>
+                                            </span>
+                                        </span>
+
+                                        <label class="trending-row__order">
+                                            <span class="form-field__help"><?= e(Lang::get('admin.home.order')) ?></span>
+                                            <input class="input input--cell" type="number" name="order[<?= $id ?>]" value="<?= $order ?>"
+                                                   min="0" max="999" step="1" inputmode="numeric"
+                                                   aria-label="<?= e(Lang::get('admin.home.order_of', ['name' => $product['name']])) ?>">
+                                        </label>
+                                    </li>
+                                <?php } ?>
+                            </ul>
+                        <?php },
+                    ],
+                ],
+            ]); ?>
         </form>
+
+        <?php admin_partial('form/save-bar', ['form' => 'home-form']); ?>
     </main>
+
+    <script type="module" src="/assets/js/admin-home.js?v=<?= e(ASSETS) ?>"></script>
     <?php
 };
 
