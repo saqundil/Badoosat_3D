@@ -226,10 +226,10 @@ $body = static function () use ($stats, $trend, $recent, $queue, $alerts, $listF
         <div class="overview-split">
             <?php
             /* Two lists, one shape: the newest orders, and what is on the press. */
-            $list = static function (string $titleKey, array $rows, string $href, string $emptyKey) use ($listFailed): void { ?>
-                <section class="panel-card" aria-labelledby="<?= e($titleKey) ?>">
+            $list = static function (string $id, string $titleKey, array $rows, string $href, string $emptyKey) use ($listFailed): void { ?>
+                <section class="panel-card" aria-labelledby="<?= e($id) ?>-title">
                     <header class="panel-card__head">
-                        <h2 class="panel-card__title" id="<?= e($titleKey) ?>"><?= e(Lang::get($titleKey)) ?></h2>
+                        <h2 class="panel-card__title" id="<?= e($id) ?>-title"><?= e(Lang::get($titleKey)) ?></h2>
                         <a class="button button--ghost button--small" href="<?= e($href) ?>"><?= e(Lang::get('admin.overview.see_all')) ?></a>
                     </header>
 
@@ -261,8 +261,8 @@ $body = static function () use ($stats, $trend, $recent, $queue, $alerts, $listF
                 </section>
             <?php };
 
-            $list('admin.overview.recent', $recent, '/admin/orders.php', 'admin.orders.empty');
-            $list('admin.overview.queue', $queue, '/admin/orders.php?tab=printing', 'admin.overview.queue_empty');
+            $list('latest-orders', 'admin.overview.recent', $recent, '/admin/orders.php', 'admin.orders.empty');
+            $list('on-the-press', 'admin.overview.queue', $queue, '/admin/orders.php?tab=printing', 'admin.overview.queue_empty');
             ?>
         </div>
     </main>

@@ -1517,7 +1517,8 @@ textarea:focus-visible {
 .pill-field input {
     min-inline-size: 0;
     inline-size: 100%;
-    min-block-size: calc(var(--tap) - 2px);
+    /* The input is the target, not the pill around it. */
+    min-block-size: var(--tap);
     border: 0;
     background: transparent;
     color: var(--c-ink);
