@@ -29,3 +29,18 @@
 # Visual QA screenshots (badoosat-visual-qa)
 /qa/shots/
 
+
+# IDE and editor settings
+/.idea/
+/.vscode/
+
+# Build output
+/dist/
+
+# Logs
+*.log
+/logs/
+
+# Stray files left by a mistyped shell command
+3))
+]+)'
